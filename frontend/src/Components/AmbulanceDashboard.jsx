@@ -24,6 +24,7 @@ import {
 import { MapContainer, TileLayer, Marker, useMap, Tooltip } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import intenseSiren from '../assets/freesound_community-siren-alert-96052.mp3';
@@ -165,7 +166,7 @@ const AmbulanceDashboard = () => {
       const savedId = localStorage.getItem('activeEmergencyId');
       if (savedId && !activeEmergency) {
         try {
-          const res = await axios.get(`http://localhost:5000/api/emergency/status/${savedId}`);
+          const res = await axios.get(`${API_BASE_URL}/api/emergency/status/${savedId}`);
           const activeStatuses = ['Accepted', 'OnWay', 'Arrived'];
           if (res.data.success && activeStatuses.includes(res.data.status)) {
             setActiveEmergency(res.data.emergency);
@@ -181,7 +182,7 @@ const AmbulanceDashboard = () => {
       if (activeEmergency) return;
 
       try {
-        const res = await axios.get(`http://localhost:5000/api/ambulance/check-emergency/${driverData.mediId}`);
+        const res = await axios.get(`${API_BASE_URL}/api/ambulance/check-emergency/${driverData.mediId}`);
         if (showAlarm && (!res.data.emergency || res.data.emergency._id !== incomingEmergency?._id)) {
           setShowAlarm(false);
           setIncomingEmergency(null);
@@ -209,7 +210,7 @@ const AmbulanceDashboard = () => {
     if (activeEmergency?._id) {
       heartbeat = setInterval(async () => {
         try {
-          const res = await axios.get(`http://localhost:5000/api/emergency/status/${activeEmergency._id}`);
+          const res = await axios.get(`${API_BASE_URL}/api/emergency/status/${activeEmergency._id}`);
           if (res.data.success && (res.data.status === 'Cancelled' || res.data.status === 'Completed')) {
             alert(`Mission ${res.data.status}. Unit returning to scanning mode.`);
             setActiveEmergency(null);
@@ -229,7 +230,7 @@ const AmbulanceDashboard = () => {
       broadcastInterval = setInterval(async () => {
         if (location.lat && location.lng) {
           try {
-            await axios.put(`http://localhost:5000/api/emergency/update-location/${activeEmergency._id}`, {
+            await axios.put(`${API_BASE_URL}/api/emergency/update-location/${activeEmergency._id}`, {
               lat: location.lat, lng: location.lng
             });
           } catch (err) { console.error("Broadcast fail"); }
@@ -244,14 +245,14 @@ const AmbulanceDashboard = () => {
     setIsOnDuty(newStatus);
     localStorage.setItem('isAmbulanceOnDuty', newStatus);
     try {
-      await axios.put(`http://localhost:5000/api/ambulance/toggle-status/${driverData.mediId}`, {
+      await axios.put(`${API_BASE_URL}/api/ambulance/toggle-status/${driverData.mediId}`, {
         isOnline: newStatus, lat: location.lat, lng: location.lng
       });
     } catch (err) { console.error("Toggle fail"); }
 
     if (newStatus) {
       try {
-        const res = await axios.get('http://localhost:5000/api/get-all-hospitals');
+        const res = await axios.get(`${API_BASE_URL}/api/get-all-hospitals`);
         setHospitals(res.data);
       } catch (err) { console.error("Fetch hospitals fail"); }
     }
@@ -260,7 +261,7 @@ const AmbulanceDashboard = () => {
   const handleReachedPickup = async () => {
     if (!activeEmergency?._id) return;
     try {
-      const res = await axios.put(`http://localhost:5000/api/emergency/reached-pickup/${activeEmergency._id}`);
+      const res = await axios.put(`${API_BASE_URL}/api/emergency/reached-pickup/${activeEmergency._id}`);
       if (res.data.success) {
         setActiveEmergency(res.data.emergency);
         setSeverityView('question');
@@ -272,7 +273,7 @@ const AmbulanceDashboard = () => {
     if (!serious) {
       // If not serious, mark as General and we skip hospital selection (or just keep as is)
       try {
-        await axios.put(`http://localhost:5000/api/emergency/severity/${activeEmergency._id}`, { isSerious: false });
+        await axios.put(`${API_BASE_URL}/api/emergency/severity/${activeEmergency._id}`, { isSerious: false });
         setSeverityView('completed');
       } catch (e) { }
     } else {
@@ -282,7 +283,7 @@ const AmbulanceDashboard = () => {
 
   const handleSelectHospital = async (hosp) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/emergency/severity/${activeEmergency._id}`, {
+      const res = await axios.put(`${API_BASE_URL}/api/emergency/severity/${activeEmergency._id}`, {
         isSerious: true,
         hospitalId: hosp.mediId,
         hospitalName: hosp.hospitalName
@@ -299,7 +300,7 @@ const AmbulanceDashboard = () => {
     setIsAccepting(true);
     setSwipeValue(0);
     try {
-      const res = await axios.put(`http://localhost:5000/api/emergency/accept/${incomingEmergency._id}`, {
+      const res = await axios.put(`${API_BASE_URL}/api/emergency/accept/${incomingEmergency._id}`, {
         ambulanceId: driverData.mediId,
         driverName: driverData.name,
         driverPhone: driverData.phone,
@@ -323,7 +324,7 @@ const AmbulanceDashboard = () => {
   const handleCompleteMission = async () => {
     if (!activeEmergency?._id || !window.confirm("Complete Mission?")) return;
     try {
-      const res = await axios.put(`http://localhost:5000/api/emergency/complete/${activeEmergency._id}`);
+      const res = await axios.put(`${API_BASE_URL}/api/emergency/complete/${activeEmergency._id}`);
       if (res.data.success) {
         setActiveEmergency(null);
         localStorage.removeItem('activeEmergencyId');

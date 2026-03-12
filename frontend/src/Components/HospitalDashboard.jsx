@@ -19,6 +19,7 @@ import {
     MoreVert as MoreVertIcon, Close as CloseIcon, Print as PrintIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const HospitalDashboard = () => {
@@ -90,14 +91,14 @@ const HospitalDashboard = () => {
 
     const fetchStaff = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/hospital-staff?hospitalMediId=${hospitalId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/hospital-staff?hospitalMediId=${hospitalId}`);
             setStaff(res.data);
         } catch (err) { console.error("Error fetching staff", err); }
     };
 
     const fetchNotifications = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/hospital/notifications/${hospitalId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/hospital/notifications/${hospitalId}`);
             if (res.data.success) {
                 const backendNotifs = res.data.notifications.map(n => ({
                     ...n,
@@ -116,7 +117,7 @@ const HospitalDashboard = () => {
     const fetchBeds = async () => {
         try {
             console.log("Fetching beds for hospital:", hospitalId);
-            const res = await axios.get(`http://localhost:5000/api/hospital/beds/${hospitalId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/hospital/beds/${hospitalId}`);
             console.log("Beds API Response:", res.data);
             if (res.data.success) {
                 setBeds(res.data.beds);
@@ -134,7 +135,7 @@ const HospitalDashboard = () => {
 
     const fetchTodayCount = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/get-hospital-appointments/${hospitalId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/get-hospital-appointments/${hospitalId}`);
             const today = new Date().toISOString().split('T')[0];
             const count = res.data.filter(apt => {
                 const aptDate = apt.date ? new Date(apt.date).toISOString().split('T')[0] : '';
@@ -146,7 +147,7 @@ const HospitalDashboard = () => {
 
     const fetchDonors = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/blood-donation/donors');
+            const res = await axios.get(`${API_BASE_URL}/api/blood-donation/donors`);
             if (res.data.success) {
                 setDonors(res.data.donors);
             }
@@ -155,7 +156,7 @@ const HospitalDashboard = () => {
 
     const fetchBloodRequests = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/blood-request/hospital/${hospitalId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/blood-request/hospital/${hospitalId}`);
             if (res.data.success) {
                 setBloodRequests(res.data.requests);
             }
@@ -164,7 +165,7 @@ const HospitalDashboard = () => {
 
     const handleMarkBloodReceived = async (requestId) => {
         try {
-            const res = await axios.put(`http://localhost:5000/api/blood-request/mark-received/${requestId}`);
+            const res = await axios.put(`${API_BASE_URL}/api/blood-request/mark-received/${requestId}`);
             if (res.data.success) {
                 alert("Blood marked as received! Patient has been notified.");
                 fetchBloodRequests();
@@ -177,7 +178,7 @@ const HospitalDashboard = () => {
     const fetchLiveQueue = async () => {
         try {
             const today = new Date().toISOString().split('T')[0];
-            const res = await axios.get(`http://localhost:5000/api/get-hospital-appointments/${hospitalId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/get-hospital-appointments/${hospitalId}`);
 
             // Filter for today
             const todayApts = res.data.filter(apt => {
@@ -209,7 +210,7 @@ const HospitalDashboard = () => {
 
     const fetchAllAppointments = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/get-hospital-appointments/${hospitalId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/get-hospital-appointments/${hospitalId}`);
             setAllApts(res.data);
         } catch (err) { console.error("Error fetching all appointments", err); }
     };
@@ -220,7 +221,7 @@ const HospitalDashboard = () => {
 
     const handleSyncCapacity = async () => {
         try {
-            const res = await axios.post('http://localhost:5000/api/hospital/update-capacity', {
+            const res = await axios.post(`${API_BASE_URL}/api/hospital/update-capacity`, {
                 hospitalMediId: hospitalId,
                 general: capacities.General,
                 icu: capacities.ICU,
@@ -287,7 +288,7 @@ const HospitalDashboard = () => {
     const handleSearchPatient = async () => {
         if (!searchId) return alert("Please enter a Medi-ID");
         try {
-            const res = await axios.get(`http://localhost:5000/api/search-patient/${searchId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/search-patient/${searchId}`);
             if (res.data && res.data.success) {
                 setFoundPatient(res.data.patient);
             }
@@ -316,7 +317,7 @@ const HospitalDashboard = () => {
             date: new Date().toISOString().split('T')[0]
         };
         try {
-            const res = await axios.post('http://localhost:5000/api/book-appointment', payload);
+            const res = await axios.post(`${API_BASE_URL}/api/book-appointment`, payload);
             if (res.data.success) {
                 setVirtualToken(res.data.appointment);
                 fetchTodayCount();
@@ -328,7 +329,7 @@ const HospitalDashboard = () => {
 
     const handleDeleteNotification = async (notifId) => {
         try {
-            const res = await axios.delete(`http://localhost:5000/api/notifications/${notifId}`);
+            const res = await axios.delete(`${API_BASE_URL}/api/notifications/${notifId}`);
             if (res.data.success) {
                 fetchNotifications();
             }
@@ -342,7 +343,7 @@ const HospitalDashboard = () => {
     const handleClearAllNotifications = async () => {
         if (!window.confirm("Clear all notifications?")) return;
         try {
-            const res = await axios.delete(`http://localhost:5000/api/notifications/clear-all/${hospitalId}`);
+            const res = await axios.delete(`${API_BASE_URL}/api/notifications/clear-all/${hospitalId}`);
             if (res.data.success) {
                 setNotifications([]);
                 setUnreadCount(0);
@@ -387,7 +388,7 @@ const HospitalDashboard = () => {
             form.append('hospitalMediId', hospitalId);
             if (selectedFile) form.append('photo', selectedFile);
 
-            const res = await axios.post('http://localhost:5000/api/hospital/add-personnel', form);
+            const res = await axios.post(`${API_BASE_URL}/api/hospital/add-personnel`, form);
 
             if (res.data.success) {
                 alert(`✅ Success!\nPersonnel registered.\nMedi-ID: ${res.data.generatedId}`);
@@ -419,7 +420,7 @@ const HospitalDashboard = () => {
             formDataToSubmit.append('role', editingPersonnel.role);
             if (selectedFile) formDataToSubmit.append('photo', selectedFile);
 
-            const res = await axios.put(`http://localhost:5000/api/hospital/update-personnel/${editingPersonnel.mediId}`, formDataToSubmit);
+            const res = await axios.put(`${API_BASE_URL}/api/hospital/update-personnel/${editingPersonnel.mediId}`, formDataToSubmit);
             if (res.data.success) {
                 alert("Personnel updated successfully");
                 setEditModalOpen(false);
@@ -430,7 +431,7 @@ const HospitalDashboard = () => {
 
     const handleTogglePersonnelStatus = async (mediId) => {
         try {
-            const res = await axios.put(`http://localhost:5000/api/hospital/toggle-status/${mediId}`, { hospitalMediId: hospitalId });
+            const res = await axios.put(`${API_BASE_URL}/api/hospital/toggle-status/${mediId}`, { hospitalMediId: hospitalId });
             if (res.data.success) {
                 alert(res.data.message);
                 fetchStaff();
@@ -441,7 +442,7 @@ const HospitalDashboard = () => {
     const handleRemovePersonnel = async (mediId) => {
         if (!window.confirm("Are you sure you want to remove this personnel?")) return;
         try {
-            const res = await axios.delete(`http://localhost:5000/api/admin/remove-personnel/${mediId}?hospitalMediId=${hospitalId}`);
+            const res = await axios.delete(`${API_BASE_URL}/api/admin/remove-personnel/${mediId}?hospitalMediId=${hospitalId}`);
             if (res.data.success) {
                 alert("Personnel removed successfully");
                 fetchStaff();
@@ -463,7 +464,7 @@ const HospitalDashboard = () => {
                     patientName: bedPatientName,
                     patientId: bedPatientId
                 };
-                const res = await axios.put('http://localhost:5000/api/hospital/beds/update', payload);
+                const res = await axios.put(`${API_BASE_URL}/api/hospital/beds/update`, payload);
                 if (res.data.success) {
                     setBedModalOpen(false);
                     setBedPatientName('');
@@ -481,7 +482,7 @@ const HospitalDashboard = () => {
                             patientName: null,
                             patientId: null
                         };
-                        const res = await axios.put('http://localhost:5000/api/hospital/beds/update', payload);
+                        const res = await axios.put(`${API_BASE_URL}/api/hospital/beds/update`, payload);
                         if (res.data.success) {
                             setBedModalOpen(false);
                             fetchBeds();
@@ -490,7 +491,7 @@ const HospitalDashboard = () => {
                     return;
                 }
                 
-                const res = await axios.post(`http://localhost:5000/api/discharge/request/${selectedBedApt._id}`);
+                const res = await axios.post(`${API_BASE_URL}/api/discharge/request/${selectedBedApt._id}`);
                 if (res.data.success) {
                     alert("Discharge initiated! Patient moved to Finance section.");
                     setBedModalOpen(false);
@@ -508,7 +509,7 @@ const HospitalDashboard = () => {
         const totalAmount = Number(bedRate) * Number(daysAdmitted);
         
         try {
-            const res = await axios.post(`http://localhost:5000/api/discharge/generate-bill/${billingAptId}`, { totalAmount });
+            const res = await axios.post(`${API_BASE_URL}/api/discharge/generate-bill/${billingAptId}`, { totalAmount });
             if (res.data.success) {
                 alert(`Bill generated successfully for ₹${totalAmount}. Patient notified.`);
                 setBillModalOpen(false);
@@ -523,7 +524,7 @@ const HospitalDashboard = () => {
     const handleConfirmCOD = async (aptId) => {
         if (!window.confirm("Confirm that you have received the COD payment? This will discharge the patient and free the bed.")) return;
         try {
-            const res = await axios.post(`http://localhost:5000/api/discharge/confirm-cod/${aptId}`);
+            const res = await axios.post(`${API_BASE_URL}/api/discharge/confirm-cod/${aptId}`);
             if (res.data.success) {
                 alert("Payment confirmed and patient discharged successfully.");
                 fetchAllAppointments();
@@ -1266,7 +1267,7 @@ const HospitalDashboard = () => {
                                     }}>
                                         <Stack direction="row" spacing={2.5} alignItems="center">
                                             <Avatar
-                                                src={person.photoUrl ? `http://localhost:5000/${person.photoUrl.replace(/\\/g, '/')}` : ""}
+                                                src={person.photoUrl ? `${API_BASE_URL}/${person.photoUrl.replace(/\\/g, '/')}` : ""}
                                                 sx={{ width: 84, height: 84, bgcolor: 'rgba(99,102,241,0.2)', borderRadius: 3, border: '1px solid rgba(99,102,241,0.3)' }}
                                             >
                                                 <AccountIcon fontSize="large" sx={{ color: '#818cf8' }} />
@@ -1615,7 +1616,7 @@ const HospitalDashboard = () => {
                                                             setWardMenuAnchor(null); return;
                                                         }
                                                         try {
-                                                            const res = await axios.post(`http://localhost:5000/api/hospital/delete-ward`, {
+                                                            const res = await axios.post(`${API_BASE_URL}/api/hospital/delete-ward`, {
                                                                 hospitalMediId: hospitalId, wardName
                                                             });
                                                             if (res.data.success) {
@@ -1739,7 +1740,7 @@ const HospitalDashboard = () => {
                                                 <TableRow key={person._id} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }}>
                                                     <TableCell>
                                                         <Avatar
-                                                            src={person.photoUrl ? `http://localhost:5000/${person.photoUrl.replace(/\\/g, '/')}` : ""}
+                                                            src={person.photoUrl ? `${API_BASE_URL}/${person.photoUrl.replace(/\\/g, '/')}` : ""}
                                                             sx={{ width: 50, height: 50, borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)' }}
                                                         />
                                                     </TableCell>
@@ -2128,7 +2129,7 @@ const HospitalDashboard = () => {
                         disabled={!selectedBed}
                         onClick={async () => {
                             try {
-                                const res = await axios.post('http://localhost:5000/api/admission/allot-bed', {
+                                const res = await axios.post(`${API_BASE_URL}/api/admission/allot-bed`, {
                                     notificationId: activeRequest.notificationId,
                                     appointmentId: activeRequest.appointmentId,
                                     patientId: activeRequest.patientId,

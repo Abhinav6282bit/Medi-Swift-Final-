@@ -19,6 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const BloodDonation = () => {
     const navigate = useNavigate();
@@ -57,7 +58,7 @@ const BloodDonation = () => {
         const checkStatus = async () => {
             if (!sessionUser.mediId) { navigate('/'); return; }
             try {
-                const res = await axios.get(`http://localhost:5000/api/blood-donation/status/${sessionUser.mediId}`);
+                const res = await axios.get(`${API_BASE_URL}/api/blood-donation/status/${sessionUser.mediId}`);
                 if (res.data.success && res.data.registered) {
                     setRegistrationStatus('registered');
                     setDonorData(res.data.data);
@@ -76,7 +77,7 @@ const BloodDonation = () => {
 
         const fetchProfile = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/search-patient/${sessionUser.mediId}`);
+                const res = await axios.get(`${API_BASE_URL}/api/search-patient/${sessionUser.mediId}`);
                 if (res.data.success) {
                     const p = res.data.patient;
                     let computedAge = p.age || '';
@@ -97,7 +98,7 @@ const BloodDonation = () => {
 
         const fetchIncoming = async (id) => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/blood-request/incoming/${id}`);
+                const res = await axios.get(`${API_BASE_URL}/api/blood-request/incoming/${id}`);
                 if (res.data.success) setIncomingRequests(res.data.requests);
             } catch (err) { console.error(err); }
         };
@@ -112,7 +113,7 @@ const BloodDonation = () => {
     const handleToggleStatus = async () => {
         setToggling(true);
         try {
-            const res = await axios.post(`http://localhost:5000/api/blood-donation/toggle/${sessionUser.mediId}`);
+            const res = await axios.post(`${API_BASE_URL}/api/blood-donation/toggle/${sessionUser.mediId}`);
             if (res.data.success) {
                 setDonorData(prev => ({ ...prev, isActive: res.data.isActive }));
                 setSnack({ open: true, msg: res.data.message, severity: res.data.isActive ? 'success' : 'warning' });
@@ -127,7 +128,7 @@ const BloodDonation = () => {
     const handleRequestAction = async (reqId, action) => {
         setActionLoading(reqId + action);
         try {
-            const res = await axios.put(`http://localhost:5000/api/blood-request/update/${reqId}`, { status: action });
+            const res = await axios.put(`${API_BASE_URL}/api/blood-request/update/${reqId}`, { status: action });
             if (res.data.success) {
                 setIncomingRequests(prev => prev.filter(r => r._id !== reqId));
                 setSnack({ open: true, msg: action === 'Accepted' ? `Request accepted! Token #${res.data.request.tokenNumber} generated.` : 'Request ignored.', severity: action === 'Accepted' ? 'success' : 'info' });
@@ -147,7 +148,7 @@ const BloodDonation = () => {
         }
         setRegistering(true);
         try {
-            const res = await axios.post('http://localhost:5000/api/blood-donation/register', formData);
+            const res = await axios.post(`${API_BASE_URL}/api/blood-donation/register`, formData);
             if (res.data.success) {
                 setRegistrationStatus('registered');
                 setDonorData(res.data.data);

@@ -4,6 +4,7 @@ import { Menu as MenuIcon, Dashboard, LocalHospital, LocalShipping, Science, Sto
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const drawerWidth = 280;
 
@@ -86,15 +87,15 @@ const AdminDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const statsRes = await axios.get('http://localhost:5000/api/admin/stats');
+            const statsRes = await axios.get(`${API_BASE_URL}/api/admin/stats`);
             setStats(statsRes.data);
 
             // Always fetch hospitals for the filter
-            const hospRes = await axios.get('http://localhost:5000/api/admin/view-all/HOSPITAL');
+            const hospRes = await axios.get(`${API_BASE_URL}/api/admin/view-all/HOSPITAL`);
             setHospitals(hospRes.data);
 
             if (roleMapping[view]) {
-                const listRes = await axios.get(`http://localhost:5000/api/admin/view-all/${roleMapping[view]}`);
+                const listRes = await axios.get(`${API_BASE_URL}/api/admin/view-all/${roleMapping[view]}`);
                 setListData(listRes.data);
             }
         } catch (err) {
@@ -119,7 +120,7 @@ const AdminDashboard = () => {
 
     const handleEnrollHospital = async () => {
         try {
-            const res = await axios.post('http://localhost:5000/api/admin/add-hospital', {
+            const res = await axios.post(`${API_BASE_URL}/api/admin/add-hospital`, {
                 ...hospitalData,
                 role: 'HOSPITAL'
             });
@@ -138,7 +139,7 @@ const AdminDashboard = () => {
             return alert('Please fill in all required fields.');
         }
         try {
-            const res = await axios.post('http://localhost:5000/api/admin/register-blood-bank', bloodBankData);
+            const res = await axios.post(`${API_BASE_URL}/api/admin/register-blood-bank`, bloodBankData);
             if (res.data.success) {
                 alert(`Blood Bank Registered!\nMedi-ID: ${res.data.generatedId}`);
                 setView('view-blood-banks');
@@ -152,7 +153,7 @@ const AdminDashboard = () => {
     const deleteEntity = async (id) => {
         if (window.confirm("Are you sure you want to remove this record?")) {
             try {
-                await axios.delete(`http://localhost:5000/api/admin/delete-entity/${id}`);
+                await axios.delete(`${API_BASE_URL}/api/admin/delete-entity/${id}`);
                 fetchData();
             } catch (err) {
                 alert("Delete failed.");
@@ -162,7 +163,7 @@ const AdminDashboard = () => {
 
     const toggleBlockStatus = async (id) => {
         try {
-            const res = await axios.put(`http://localhost:5000/api/admin/toggle-status/${id}`);
+            const res = await axios.put(`${API_BASE_URL}/api/admin/toggle-status/${id}`);
             if (res.data.success) {
                 fetchData();
             }
@@ -179,7 +180,7 @@ const AdminDashboard = () => {
 
     const handleEditSave = async () => {
         try {
-            const res = await axios.put(`http://localhost:5000/api/admin/update-entity/${editingItem._id}`, editFormData);
+            const res = await axios.put(`${API_BASE_URL}/api/admin/update-entity/${editingItem._id}`, editFormData);
             if (res.data.success) {
                 setEditDialogOpen(false);
                 fetchData();

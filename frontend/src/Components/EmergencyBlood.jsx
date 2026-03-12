@@ -15,6 +15,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -45,7 +46,7 @@ const EmergencyBlood = () => {
 
     const fetchHospitals = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/get-all-hospitals');
+            const res = await axios.get(`${API_BASE_URL}/api/get-all-hospitals`);
             setHospitals(res.data);
         } catch (err) {
             console.error("Error fetching hospitals", err);
@@ -58,7 +59,7 @@ const EmergencyBlood = () => {
             const requesterId = sessionData.mediId || '';
 
             // Fetch individual donors
-            const donorRes = await axios.get(`http://localhost:5000/api/blood-donation/donors?requesterId=${requesterId}`);
+            const donorRes = await axios.get(`${API_BASE_URL}/api/blood-donation/donors?requesterId=${requesterId}`);
             let allDonorsList = [];
             if (donorRes.data.success) {
                 allDonorsList = donorRes.data.donors.map(d => ({
@@ -70,7 +71,7 @@ const EmergencyBlood = () => {
             }
 
             // Fetch Blood Banks
-            const bankRes = await axios.get(`http://localhost:5000/api/blood-bank/all`);
+            const bankRes = await axios.get(`${API_BASE_URL}/api/blood-bank/all`);
             if (bankRes.data.success) {
                 const banks = bankRes.data.bloodBanks.map(b => ({
                     ...b,
@@ -127,7 +128,7 @@ const EmergencyBlood = () => {
                 donationTime
             };
 
-            const res = await axios.post('http://localhost:5000/api/blood-request/send', payload);
+            const res = await axios.post(`${API_BASE_URL}/api/blood-request/send`, payload);
             if (res.data.success) {
                 alert(`Blood request sent to ${selectedDonor.type}! They will Accept or Ignore your request.`);
                 setRequestOpen(true); // Keep open to show success or navigate? Actually alert is enough.

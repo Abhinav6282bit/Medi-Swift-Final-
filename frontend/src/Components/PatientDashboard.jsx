@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import {
   AppBar, Box, Toolbar, Typography, Container, Button, Grid, Card, CardContent, Drawer, List, ListItem, ListItemIcon, ListItemText, IconButton, ListItemButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Stack, Divider, CircularProgress, Chip, Avatar, Badge, Popover, ListItemAvatar
 } from '@mui/material';
@@ -69,7 +70,7 @@ const PatientDashboard = () => {
       if (storedUser && storedUser.mediId) {
         try {
           console.log("Restoring session for:", storedUser.mediId);
-          const res = await axios.get(`http://localhost:5000/api/patient-active-appointment/${storedUser.mediId}`);
+          const res = await axios.get(`${API_BASE_URL}/api/patient-active-appointment/${storedUser.mediId}`);
           if (res.data.success && res.data.appointment) {
             console.log("Session restored:", res.data.appointment);
             setVirtualToken(res.data.appointment);
@@ -89,7 +90,7 @@ const PatientDashboard = () => {
 
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/patient/notifications/${patientData.mediId}`);
+        const res = await axios.get(`${API_BASE_URL}/api/patient/notifications/${patientData.mediId}`);
         if (res.data.success) {
           // Map backend notifications to the display format
           const backendNotifs = res.data.notifications.map(n => ({
@@ -135,7 +136,7 @@ const PatientDashboard = () => {
           const aptDate = new Date(virtualToken.date).toISOString().split('T')[0];
 
           if (aptDate === today) {
-            const res = await axios.get(`http://localhost:5000/api/doctor-live-status/${virtualToken.doctorId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/doctor-live-status/${virtualToken.doctorId}`);
 
             const newCurrentToken = res.data.currentToken;
             if (newCurrentToken > 0 && newCurrentToken !== lastKnownToken.current) {
@@ -169,7 +170,7 @@ const PatientDashboard = () => {
 
       try {
         // Fetch outgoing requests (requests this patient sent to others)
-        const outRes = await axios.get(`http://localhost:5000/api/blood-request/outgoing/${patientData.mediId}`);
+        const outRes = await axios.get(`${API_BASE_URL}/api/blood-request/outgoing/${patientData.mediId}`);
         if (outRes.data.success) {
           setOutgoingRequests(outRes.data.requests);
 
@@ -221,11 +222,11 @@ const PatientDashboard = () => {
 
       try {
         // Fetch donor registration status
-        const statusRes = await axios.get(`http://localhost:5000/api/blood-donation/status/${patientData.mediId}`);
+        const statusRes = await axios.get(`${API_BASE_URL}/api/blood-donation/status/${patientData.mediId}`);
         if (statusRes.data.registered) {
           setIsRegisteredDonor(true);
           // If registered, fetch incoming requests
-          const inRes = await axios.get(`http://localhost:5000/api/blood-request/incoming/${patientData.mediId}`);
+          const inRes = await axios.get(`${API_BASE_URL}/api/blood-request/incoming/${patientData.mediId}`);
           if (inRes.data.success) {
             setIncomingRequests(inRes.data.requests);
 
@@ -270,7 +271,7 @@ const PatientDashboard = () => {
     if (!pId) return;
 
     try {
-      const res = await axios.get(`http://localhost:5000/api/patient-history/${pId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/patient-history/${pId}`);
       setMedicalHistory(res.data);
     } catch (err) {
       console.error("History fetch failed", err);
@@ -299,7 +300,7 @@ const PatientDashboard = () => {
     const fetchActivePrescriptions = async () => {
       if (!patientData.mediId) return;
       try {
-        const res = await axios.get(`http://localhost:5000/api/get-patient-prescriptions/${patientData.mediId}`);
+        const res = await axios.get(`${API_BASE_URL}/api/get-patient-prescriptions/${patientData.mediId}`);
         const readyOrder = res.data.find(p => p.status === 'Ready for Pickup' || p.status === 'Preparing');
 
         if (readyOrder) {
@@ -337,12 +338,12 @@ const PatientDashboard = () => {
       if (!patientData.mediId) return;
       try {
         // Check if registered
-        const statusRes = await axios.get(`http://localhost:5000/api/blood-donation/status/${patientData.mediId}`);
+        const statusRes = await axios.get(`${API_BASE_URL}/api/blood-donation/status/${patientData.mediId}`);
         if (statusRes.data.success && statusRes.data.registered) {
           setIsRegisteredDonor(true);
 
           // Fetch incoming requests
-          const reqRes = await axios.get(`http://localhost:5000/api/blood-request/incoming/${patientData.mediId}`);
+          const reqRes = await axios.get(`${API_BASE_URL}/api/blood-request/incoming/${patientData.mediId}`);
           if (reqRes.data.success) {
             setIncomingRequests(reqRes.data.requests);
             // Add notification if there are pending requests
@@ -371,7 +372,7 @@ const PatientDashboard = () => {
 
   const handleConfirmPayment = async (method) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/patient/confirm-payment-intent', {
+      const res = await axios.post(`${API_BASE_URL}/api/patient/confirm-payment-intent`, {
         orderId: orderData._id,
         method: method
       });
@@ -394,7 +395,7 @@ const PatientDashboard = () => {
       const encodedId = encodeURIComponent(patientData.mediId);
       const pName = patientData.name || "";
       const encodedName = encodeURIComponent(pName);
-      const res = await axios.get(`http://localhost:5000/api/patient-history/${encodedId}?name=${encodedName}`);
+      const res = await axios.get(`${API_BASE_URL}/api/patient-history/${encodedId}?name=${encodedName}`);
       setMedicalHistory(res.data);
     } catch (err) {
       console.error("Error fetching medical history", err);
@@ -403,7 +404,7 @@ const PatientDashboard = () => {
 
   const handleUpdateRequestStatus = async (requestId, newStatus) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/blood-request/update/${requestId}`, { status: newStatus });
+      const res = await axios.put(`${API_BASE_URL}/api/blood-request/update/${requestId}`, { status: newStatus });
       if (res.data.success) {
         // Refresh requests locally
         setIncomingRequests(prev => prev.map(req => req._id === requestId ? { ...req, status: newStatus, tokenNumber: res.data.request.tokenNumber } : req));
@@ -415,7 +416,7 @@ const PatientDashboard = () => {
 
   const handleOpenProfile = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/search-patient/${patientData.mediId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/search-patient/${patientData.mediId}`);
       if (res.data.success) {
         setFullPatientData(res.data.patient);
         setProfileOpen(true);
@@ -434,7 +435,7 @@ const PatientDashboard = () => {
     setAptOpen(true);
     setVirtualToken(null);
     try {
-      const res = await axios.get('http://localhost:5000/api/get-all-hospitals');
+      const res = await axios.get(`${API_BASE_URL}/api/get-all-hospitals`);
       setHospitals(res.data);
     } catch (err) { console.error("Error fetching hospitals"); }
   };
@@ -444,7 +445,7 @@ const PatientDashboard = () => {
     if (!metadata) return;
 
     try {
-      const res = await axios.post('http://localhost:5000/api/book-appointment', {
+      const res = await axios.post(`${API_BASE_URL}/api/book-appointment`, {
         patientId: patientData.mediId,
         patientName: patientData.name,
         hospitalId: metadata.hospitalId || '', // metadata should have this
@@ -469,7 +470,7 @@ const PatientDashboard = () => {
 
   const handleDeleteNotification = async (notifId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/notifications/${notifId}`);
+      await axios.delete(`${API_BASE_URL}/api/notifications/${notifId}`);
       setNotifications(prev => prev.filter(n => n._id !== notifId));
     } catch (err) {
       console.error("Delete notification failed", err);
@@ -479,7 +480,7 @@ const PatientDashboard = () => {
   const handleClearAllNotifications = async () => {
     if (!window.confirm("Clear all notifications?")) return;
     try {
-      const res = await axios.delete(`http://localhost:5000/api/notifications/clear-all/${patientData.mediId}`);
+      const res = await axios.delete(`${API_BASE_URL}/api/notifications/clear-all/${patientData.mediId}`);
       if (res.data.success) {
         setNotifications([]);
         setUnreadCount(0);
@@ -492,14 +493,14 @@ const PatientDashboard = () => {
   const handleHospitalChange = async (hId, hName) => {
     setBookingData({ ...bookingData, hospitalId: hId, hospitalName: hName, doctorId: '', doctorName: '' });
     try {
-      const res = await axios.get(`http://localhost:5000/api/get-records?vault=${hId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/get-records?vault=${hId}`);
       setDoctors(res.data.filter(r => r.category === 'Doctors'));
     } catch (err) { console.error("Error fetching doctors"); }
   };
 
   const handleFinalSubmit = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/api/book-appointment', {
+      const res = await axios.post(`${API_BASE_URL}/api/book-appointment`, {
         ...bookingData,
         patientId: patientData.mediId,
         patientName: patientData.name
@@ -517,7 +518,7 @@ const PatientDashboard = () => {
     // Mark as read on backend
     if (patientData.mediId) {
       try {
-        await axios.put(`http://localhost:5000/api/patient/notifications/mark-read/${patientData.mediId}`);
+        await axios.put(`${API_BASE_URL}/api/patient/notifications/mark-read/${patientData.mediId}`);
         // Also mark client-side notifications as read
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       } catch (err) {
@@ -779,7 +780,7 @@ const PatientDashboard = () => {
             borderBottom: '1px solid rgba(255,255,255,0.05)'
           }}>
             <Avatar
-              src={patientData.photoUrl ? `http://localhost:5000/${patientData.photoUrl}` : ''}
+              src={patientData.photoUrl ? `${API_BASE_URL}/${patientData.photoUrl}` : ''}
               sx={{ width: 64, height: 64, mb: 2, bgcolor: '#4318ff', fontWeight: 900, fontSize: '1.5rem', boxShadow: '0 8px 16px rgba(67, 24, 255, 0.3)' }}
             >
               {patientData.name ? patientData.name[0] : 'U'}
@@ -890,7 +891,7 @@ const PatientDashboard = () => {
                   fullWidth variant="contained" 
                   onClick={async () => {
                     if (window.confirm('Simulate paying ₹' + virtualToken.ipdBillAmount + ' online?')) {
-                      await axios.post(`http://localhost:5000/api/discharge/pay/${virtualToken._id}`, { paymentMethod: 'Online' });
+                      await axios.post(`${API_BASE_URL}/api/discharge/pay/${virtualToken._id}`, { paymentMethod: 'Online' });
                       alert('Payment successful! You are officially discharged.');
                       setVirtualToken(null);
                       fetchHistory();
@@ -903,7 +904,7 @@ const PatientDashboard = () => {
                 <Button 
                   fullWidth variant="outlined" 
                   onClick={async () => {
-                     await axios.post(`http://localhost:5000/api/discharge/pay/${virtualToken._id}`, { paymentMethod: 'COD' });
+                     await axios.post(`${API_BASE_URL}/api/discharge/pay/${virtualToken._id}`, { paymentMethod: 'COD' });
                      alert('COD requested. Please pay at the hospital counter. The staff will confirm and discharge you.');
                      // Update local token to reflect new status
                      setVirtualToken({ ...virtualToken, ipdBillStatus: 'Pending_COD' });
@@ -1160,7 +1161,7 @@ const PatientDashboard = () => {
                     disabled={!bookingData.symptoms}
                     onClick={async () => {
                       try {
-                        const res = await axios.post('http://localhost:5000/api/ai-match-doctor', { symptoms: bookingData.symptoms, hospitalId: bookingData.hospitalId });
+                        const res = await axios.post(`${API_BASE_URL}/api/ai-match-doctor`, { symptoms: bookingData.symptoms, hospitalId: bookingData.hospitalId });
                         if (res.data.success) {
                           setBookingData({ ...bookingData, aiResult: res.data.aiResult, matchedDoctors: res.data.doctors, step: 2 });
                         }
@@ -1453,7 +1454,7 @@ const PatientDashboard = () => {
                       {(() => {
                         const fullUrl = selectedReport.reportUrl.startsWith('http')
                           ? selectedReport.reportUrl
-                          : `http://localhost:5000/${selectedReport.reportUrl}`;
+                          : `${API_BASE_URL}/${selectedReport.reportUrl}`;
 
                         return fullUrl.toLowerCase().includes('.pdf') ? (
                           <iframe
@@ -1653,7 +1654,7 @@ const PatientDashboard = () => {
         >
           <DialogTitle sx={{ textAlign: 'center', pt: 4, pb: 2 }}>
             <Avatar
-              src={fullPatientData?.photoUrl ? `http://localhost:5000/${fullPatientData.photoUrl}` : ''}
+              src={fullPatientData?.photoUrl ? `${API_BASE_URL}/${fullPatientData.photoUrl}` : ''}
               sx={{
                 width: 100, height: 100, mx: 'auto', mb: 2,
                 bgcolor: '#6366f1', fontSize: '2.5rem', fontWeight: 900,

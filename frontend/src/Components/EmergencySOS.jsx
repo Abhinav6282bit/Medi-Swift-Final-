@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, Button, Paper, CircularProgress, Stack, Avatar, IconButton, Grid, Divider, Stepper, Step, StepLabel } from '@mui/material';
 import { Warning, GpsFixed, LocalHospital, ShutterSpeed, Map, DirectionsCar, Coronavirus, LocalFireDepartment, MedicalServices, HelpOutline, CheckCircle, Person, Phone } from '@mui/icons-material';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const EmergencySOS = () => {
     const [phase, setPhase] = useState('ready'); // ready, selecting, searching, found, completed
@@ -90,7 +91,7 @@ const EmergencySOS = () => {
                 setStatus("Broadcasting SOS to nearby units...");
                 try {
                     const user = JSON.parse(localStorage.getItem('user'));
-                    const res = await axios.post('http://localhost:5000/api/emergency/trigger-sos', {
+                    const res = await axios.post(`${API_BASE_URL}/api/emergency/trigger-sos`, {
                         requesterId: user?.mediId || `GUEST-${Date.now()}`,
                         requesterName: user ? `${user.firstName} ${user.lastName}` : "Emergency Guest",
                         lat: pos.coords.latitude,
@@ -124,7 +125,7 @@ const EmergencySOS = () => {
         if (pollInterval) clearInterval(pollInterval);
         const interval = setInterval(async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/emergency/status/${id}`);
+                const res = await axios.get(`${API_BASE_URL}/api/emergency/status/${id}`);
                 if (!res.data.success) return;
 
                 const currentStatus = res.data.status;
@@ -167,7 +168,7 @@ const EmergencySOS = () => {
         // Notify backend of cancellation if an ID exists
         if (emergencyId) {
             try {
-                await axios.put(`http://localhost:5000/api/emergency/cancel/${emergencyId}`);
+                await axios.put(`${API_BASE_URL}/api/emergency/cancel/${emergencyId}`);
             } catch (err) { console.error("Cancel notify fail", err); }
         }
 

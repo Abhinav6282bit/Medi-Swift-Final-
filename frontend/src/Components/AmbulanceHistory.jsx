@@ -3,6 +3,7 @@ import { Box, Typography, Paper, List, ListItem, ListItemText, Divider, Button }
 import { History as HistoryIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const AmbulanceHistory = () => {
     const navigate = useNavigate();
@@ -12,7 +13,7 @@ const AmbulanceHistory = () => {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/ambulance/history/${user.mediId}`);
+                const res = await axios.get(`${API_BASE_URL}/api/ambulance/history/${user.mediId}`);
                 setHistory(res.data);
             } catch (err) { console.error("History fetch failed"); }
         };

@@ -3,6 +3,7 @@ import { Box, AppBar, Toolbar, Typography, Button, Card, CardContent, TextField,
 import { useNavigate } from 'react-router-dom';
 import { PhotoCamera, Badge } from '@mui/icons-material';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import BackgroundImage from '../assets/bgimage.png';
 import Logo from '../assets/logo.png';
 
@@ -60,7 +61,7 @@ const Register = () => {
                 data.append('email', formData.email);
             }
 
-            const res = await axios.post('http://localhost:5000/api/register-user', data, {
+            const res = await axios.post(`${API_BASE_URL}/api/register-user`, data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 

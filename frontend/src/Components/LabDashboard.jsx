@@ -3,6 +3,7 @@ import { AppBar, Box, Toolbar, Typography, Button, Grid, Card, CardContent, Draw
 import { Menu as MenuIcon, Dashboard as DashboardIcon, Science as ScienceIcon, UploadFile as UploadIcon, History as HistoryIcon, Logout as LogoutIcon, CloudUpload as CloudUploadIcon, Biotech as BiotechIcon, CheckCircle as DoneIcon, Search as SearchIcon, Hub as HubIcon, Settings as SettingsIcon, Notifications as BellIcon, Close as CloseIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const LabDashboard = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const LabDashboard = () => {
     try {
       const hId = sessionData.hospitalId || sessionData.hospitalMediId;
       if (!hId) return;
-      const res = await axios.get(`http://localhost:5000/api/hospital/notifications/${hId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/hospital/notifications/${hId}`);
       if (res.data.success && Array.isArray(res.data.notifications)) {
         const backendNotifs = res.data.notifications.map(n => ({
           _id: n._id,
@@ -47,7 +48,7 @@ const LabDashboard = () => {
 
   const handleDeleteNotification = async (notifId) => {
     try {
-      const res = await axios.delete(`http://localhost:5000/api/notifications/${notifId}`);
+      const res = await axios.delete(`${API_BASE_URL}/api/notifications/${notifId}`);
       if (res.data.success) fetchNotifications();
     } catch (err) {
       console.error("Error deleting notification:", err);
@@ -59,7 +60,7 @@ const LabDashboard = () => {
     if (!window.confirm("Clear all notifications?")) return;
     try {
       const hId = sessionData.hospitalId || sessionData.hospitalMediId;
-      const res = await axios.delete(`http://localhost:5000/api/notifications/clear-all/${hId}`);
+      const res = await axios.delete(`${API_BASE_URL}/api/notifications/clear-all/${hId}`);
       if (res.data.success) {
         setNotifications([]);
         setUnreadCount(0);
@@ -72,7 +73,7 @@ const LabDashboard = () => {
       const session = JSON.parse(localStorage.getItem('user'));
       const hId = session?.hospitalId || session?.hospitalMediId || session?.userData?.hospitalId || session?.hospitalName;
       if (!hId) return;
-      const res = await axios.get(`http://localhost:5000/api/get-hospital-labs/${encodeURIComponent(hId)}`);
+      const res = await axios.get(`${API_BASE_URL}/api/get-hospital-labs/${encodeURIComponent(hId)}`);
       
       const data = Array.isArray(res.data) ? res.data : [];
       const active = data.filter(lab => lab.status === 'Requested' || lab.status === 'Sample Collected');
@@ -96,7 +97,7 @@ const LabDashboard = () => {
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      await axios.put(`http://localhost:5000/api/update-lab-status`, { orderId, status: newStatus });
+      await axios.put(`${API_BASE_URL}/api/update-lab-status`, { orderId, status: newStatus });
       fetchLabQueue();
     } catch (err) { alert("Failed to update status"); }
   };
@@ -112,12 +113,12 @@ const LabDashboard = () => {
     setLoading(true);
 
     try {
-      const uploadRes = await axios.post('http://localhost:5000/api/upload-lab-report', formData, {
+      const uploadRes = await axios.post(`${API_BASE_URL}/api/upload-lab-report`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       if (uploadRes.data.success) {
-        await axios.put(`http://localhost:5000/api/update-lab-status`, {
+        await axios.put(`${API_BASE_URL}/api/update-lab-status`, {
           orderId: uploadingId,
           status: 'Completed',
           results: techNote,

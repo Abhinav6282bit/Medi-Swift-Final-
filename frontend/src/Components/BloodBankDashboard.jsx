@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -74,7 +75,7 @@ const BloodBankDashboard = () => {
 
     const fetchInventory = async (mediId) => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/blood-bank/inventory/${mediId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/blood-bank/inventory/${mediId}`);
             if (res.data.success) setStocks(res.data.stocks);
         } catch (err) {
             console.error('Inventory fetch error:', err);
@@ -83,7 +84,7 @@ const BloodBankDashboard = () => {
 
     const fetchRequests = async (mediId) => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/blood-request/incoming/${mediId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/blood-request/incoming/${mediId}`);
             if (res.data.success) setRequests(res.data.requests);
         } catch (err) {
             console.error('Requests fetch error:', err);
@@ -92,7 +93,7 @@ const BloodBankDashboard = () => {
 
     const fetchNotifications = async (mediId) => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/patient/notifications/${mediId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/patient/notifications/${mediId}`);
             if (res.data.success) setNotifications(res.data.notifications);
         } catch (err) {
             console.error('Notifications fetch error:', err);
@@ -104,7 +105,7 @@ const BloodBankDashboard = () => {
         setUpdating(true);
         setUpdateMsg('');
         try {
-            const res = await axios.put('http://localhost:5000/api/blood-bank/update-stock', {
+            const res = await axios.put(`${API_BASE_URL}/api/blood-bank/update-stock`, {
                 bloodBankId: bankData.mediId,
                 bloodGroup: updateGroup,
                 units: Number(updateUnits),
@@ -124,7 +125,7 @@ const BloodBankDashboard = () => {
 
     const handleRequestStatus = async (requestId, status) => {
         try {
-            const res = await axios.put(`http://localhost:5000/api/blood-request/update/${requestId}`, { status });
+            const res = await axios.put(`${API_BASE_URL}/api/blood-request/update/${requestId}`, { status });
             if (res.data.success) {
                 alert(`Request ${status} successfully!`);
                 fetchRequests(bankData.mediId);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import BackgroundImage from '../assets/bgimage.png';
 import AboutImage from '../assets/about_us.png';
 import Logo from '../assets/logo.png';
@@ -41,7 +42,7 @@ const HomePage = () => {
 
 
         try {
-            const res = await axios.post('http://localhost:5000/api/login', {
+            const res = await axios.post(`${API_BASE_URL}/api/login`, {
                 mediId: id,
                 password: password
             });
@@ -76,7 +77,7 @@ const HomePage = () => {
 
     const handleSendOtp = async () => {
         try {
-            const res = await axios.post('http://localhost:5000/api/send-otp', { identifier: forgotIdentifier });
+            const res = await axios.post(`${API_BASE_URL}/api/send-otp`, { identifier: forgotIdentifier });
             if (res.data.success) {
                 alert(res.data.message);
                 setForgotStep(2);
@@ -88,7 +89,7 @@ const HomePage = () => {
 
     const handleResetPassword = async () => {
         try {
-            const res = await axios.post('http://localhost:5000/api/reset-password', {
+            const res = await axios.post(`${API_BASE_URL}/api/reset-password`, {
                 identifier: forgotIdentifier,
                 otp,
                 newPassword

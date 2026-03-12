@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import {
   AppBar, Box, Toolbar, Typography, Button, Grid, Card, CardContent,
   Table, TableBody, TableCell, TableContainer,  TableHead, TableRow, Paper, Chip, Modal, TextField, Stack, Fade,
@@ -53,7 +54,7 @@ const PharmacyDashboard = () => {
     try {
       const hId = sessionData.hospitalId || sessionData.hospitalMediId;
       if (!hId) return;
-      const res = await axios.get(`http://localhost:5000/api/hospital/notifications/${hId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/hospital/notifications/${hId}`);
       if (res.data.success) {
         const backendNotifs = res.data.notifications.map(n => ({
           _id: n._id,
@@ -81,7 +82,7 @@ const PharmacyDashboard = () => {
 
   const handleDeleteNotification = async (notifId) => {
     try {
-      const res = await axios.delete(`http://localhost:5000/api/notifications/${notifId}`);
+      const res = await axios.delete(`${API_BASE_URL}/api/notifications/${notifId}`);
       if (res.data.success) fetchNotifications();
     } catch (err) {
       console.error("Error deleting notification:", err);
@@ -93,7 +94,7 @@ const PharmacyDashboard = () => {
     if (!window.confirm("Clear all notifications?")) return;
     try {
       const hId = sessionData.hospitalId || sessionData.hospitalMediId;
-      const res = await axios.delete(`http://localhost:5000/api/notifications/clear-all/${hId}`);
+      const res = await axios.delete(`${API_BASE_URL}/api/notifications/clear-all/${hId}`);
       if (res.data.success) {
         setNotifications([]);
         setUnreadCount(0);
@@ -111,7 +112,7 @@ const PharmacyDashboard = () => {
     try {
       const hospitalId = sessionData.hospitalId || sessionData.hospitalMediId || sessionData.userData?.hospitalId || sessionData.userData?.hospitalMediId;
       if (!hospitalId) return;
-      const res = await axios.get(`http://localhost:5000/api/pharmacy/prescriptions/${hospitalId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/pharmacy/prescriptions/${hospitalId}`);
 
       setPrescriptions(Array.isArray(res.data) ? res.data : []);
     } catch (err) { console.error("Fetch error:", err); }
@@ -121,7 +122,7 @@ const PharmacyDashboard = () => {
     try {
       const hospitalId = sessionData.hospitalId || sessionData.userData?.hospitalId;
       if (!hospitalId) return;
-      const res = await axios.get(`http://localhost:5000/api/pharmacy/transactions/${hospitalId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/pharmacy/transactions/${hospitalId}`);
       const data = Array.isArray(res.data) ? res.data : [];
       setTransactions(data);
 
@@ -139,7 +140,7 @@ const PharmacyDashboard = () => {
     try {
       const hospitalId = sessionData.hospitalId || sessionData.userData?.hospitalId;
       if (!hospitalId) return;
-      const res = await axios.get(`http://localhost:5000/api/pharmacy/stock/${hospitalId}`);
+      const res = await axios.get(`${API_BASE_URL}/api/pharmacy/stock/${hospitalId}`);
       const data = Array.isArray(res.data) ? res.data : [];
       setStock(data);
       checkLowStock(data);
@@ -171,7 +172,7 @@ const PharmacyDashboard = () => {
   const handleAddStock = async () => {
     try {
       const hospitalId = sessionData.hospitalId || sessionData.userData?.hospitalId;
-      const res = await axios.post('http://localhost:5000/api/pharmacy/add-stock', {
+      const res = await axios.post(`${API_BASE_URL}/api/pharmacy/add-stock`, {
         ...newStockForm,
         hospitalId
       });
@@ -211,13 +212,13 @@ const PharmacyDashboard = () => {
       const available = stockItems.filter(i => i.available).map(i => i.name);
 
 
-      await axios.put('http://localhost:5000/api/pharmacy/update-stock', {
+      await axios.put(`${API_BASE_URL}/api/pharmacy/update-stock`, {
         orderId: selectedOrder._id,
         availableMedicines: available
       });
 
 
-      const res = await axios.put(`http://localhost:5000/api/pharmacy/prepare-order`, {
+      const res = await axios.put(`${API_BASE_URL}/api/pharmacy/prepare-order`, {
         orderId: selectedOrder._id
       });
 
@@ -253,7 +254,7 @@ const PharmacyDashboard = () => {
   // --- STEP 2: VERIFY CODE (Final Pickup) ---
   const handleSetPreparing = async (orderId) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/pharmacy/set-preparing', { orderId });
+      const res = await axios.post(`${API_BASE_URL}/api/pharmacy/set-preparing`, { orderId });
       if (res.data.success) {
         fetchPrescriptions();
       }
@@ -262,7 +263,7 @@ const PharmacyDashboard = () => {
 
   const handleSetReady = async (orderId) => {
     try {
-      const res = await axios.put('http://localhost:5000/api/pharmacy/prepare-order', { orderId });
+      const res = await axios.put(`${API_BASE_URL}/api/pharmacy/prepare-order`, { orderId });
       if (res.data.success) {
         fetchPrescriptions();
       }
@@ -271,7 +272,7 @@ const PharmacyDashboard = () => {
 
   const handleVerifyCOD = async (orderId) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/pharmacy/verify-cod', { orderId });
+      const res = await axios.post(`${API_BASE_URL}/api/pharmacy/verify-cod`, { orderId });
       if (res.data.success) {
         alert("COD Received! Verification OTP has been sent to the patient.");
         fetchPrescriptions();
@@ -281,7 +282,7 @@ const PharmacyDashboard = () => {
 
   const handleConfirmPickup = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/api/pharmacy/verify-pickup', {
+      const res = await axios.post(`${API_BASE_URL}/api/pharmacy/verify-pickup`, {
         orderId: selectedOrder._id,
         userInputCode: verificationCodeInput
       });
@@ -300,7 +301,7 @@ const PharmacyDashboard = () => {
 
   const handleResendCode = async (orderId) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/pharmacy/prepare-order`, {
+      const res = await axios.put(`${API_BASE_URL}/api/pharmacy/prepare-order`, {
         orderId: orderId
       });
       if (res.data.success) {

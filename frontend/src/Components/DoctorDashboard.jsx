@@ -44,6 +44,7 @@ const MEDICINE_LIST = [
 ];
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const DoctorDashboard = () => {
     const navigate = useNavigate();
@@ -114,7 +115,7 @@ const DoctorDashboard = () => {
         try {
             const hId = session.hospitalId || session.hospitalMediId;
             if (!hId) return;
-            const res = await axios.get(`http://localhost:5000/api/hospital/notifications/${hId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/hospital/notifications/${hId}`);
             if (res.data.success) {
                 // Map backend notifications to the display format
                 const backendNotifs = res.data.notifications.map(n => ({
@@ -145,7 +146,7 @@ const DoctorDashboard = () => {
         try {
             const hId = session.hospitalId || session.hospitalMediId;
             if (!hId) return;
-            const res = await axios.get(`http://localhost:5000/api/get-hospital-appointments/${hId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/get-hospital-appointments/${hId}`);
             setAppointments(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error('Fetch Queue Error:', err);
@@ -157,7 +158,7 @@ const DoctorDashboard = () => {
 
     const fetchInPatients = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/doctor/ipd-patients/${session.mediId}`);
+            const res = await axios.get(`${API_BASE_URL}/api/doctor/ipd-patients/${session.mediId}`);
             if (res.data.success) {
                 setInPatients(res.data.patients);
             }
@@ -171,7 +172,7 @@ const DoctorDashboard = () => {
 
     const handleDeleteNotification = async (notifId) => {
         try {
-            const res = await axios.delete(`http://localhost:5000/api/notifications/${notifId}`);
+            const res = await axios.delete(`${API_BASE_URL}/api/notifications/${notifId}`);
             if (res.data.success) {
                 fetchNotifications();
             }
@@ -185,7 +186,7 @@ const DoctorDashboard = () => {
         if (!window.confirm("Clear all notifications?")) return;
         try {
             const hId = session.hospitalId || session.hospitalMediId;
-            const res = await axios.delete(`http://localhost:5000/api/notifications/clear-all/${hId}`);
+            const res = await axios.delete(`${API_BASE_URL}/api/notifications/clear-all/${hId}`);
             if (res.data.success) {
                 setNotifications([]);
                 setUnreadCount(0);
@@ -199,7 +200,7 @@ const DoctorDashboard = () => {
         if (!searchQuery.trim()) return;
         setSearching(true);
         try {
-            const res = await axios.get(`http://localhost:5000/api/search-patient/${encodeURIComponent(searchQuery)}`);
+            const res = await axios.get(`${API_BASE_URL}/api/search-patient/${encodeURIComponent(searchQuery)}`);
             if (res.data.success) {
                 setSearchResults(res.data.patients || [res.data.patient]);
                 setView('Search');
@@ -215,9 +216,9 @@ const DoctorDashboard = () => {
         setSelectedPatient(patient);
         setLoadingHistory(true);
         try {
-            const histRes = await axios.get(`http://localhost:5000/api/patient-history/${patient.mediId}`);
+            const histRes = await axios.get(`${API_BASE_URL}/api/patient-history/${patient.mediId}`);
             setPatientHistory(histRes.data);
-            const profRes = await axios.get(`http://localhost:5000/api/patient-profile/${patient.mediId}`);
+            const profRes = await axios.get(`${API_BASE_URL}/api/patient-profile/${patient.mediId}`);
             if (profRes.data.success) {
                 setActivePatientProfile(profRes.data.patient);
                 // Also populate the editable medical history for the current session
@@ -237,7 +238,7 @@ const DoctorDashboard = () => {
         setLoadingSummary(true);
         try {
             const hId = session.hospitalId || session.hospitalMediId;
-            const res = await axios.get(`http://localhost:5000/api/get-hospital-appointments/${encodeURIComponent(hId)}`);
+            const res = await axios.get(`${API_BASE_URL}/api/get-hospital-appointments/${encodeURIComponent(hId)}`);
             const filtered = res.data.filter(apt => {
                 const aptDate = apt.date ? new Date(apt.date).toISOString().split('T')[0] : '';
                 return apt.doctorId === session.mediId && aptDate === date && apt.status === 'Completed';
@@ -252,7 +253,7 @@ const DoctorDashboard = () => {
 
     const handleStatusUpdate = async (appointmentId, newStatus) => {
         try {
-            await axios.put(`http://localhost:5000/api/update-appointment-status/${appointmentId}`, { status: newStatus });
+            await axios.put(`${API_BASE_URL}/api/update-appointment-status/${appointmentId}`, { status: newStatus });
             fetchDoctorQueue();
             if (newStatus === 'Consulting') {
                 const target = appointments.find(a => a._id === appointmentId);
@@ -266,7 +267,7 @@ const DoctorDashboard = () => {
 
     const handleDischargeRequest = async (appointmentId) => {
         try {
-            const res = await axios.post(`http://localhost:5000/api/discharge/request/${appointmentId}`);
+            const res = await axios.post(`${API_BASE_URL}/api/discharge/request/${appointmentId}`);
             if (res.data.success) {
                 alert("Discharge requested successfully. Hospital will process the billing.");
                 fetchInPatients(); // Refresh to show updated button state
@@ -284,11 +285,11 @@ const DoctorDashboard = () => {
             const payload = { appointmentId: targetId, ...treatmentData };
             if (finalStatus === 'Admitted') payload.admissionDate = new Date().toLocaleString();
 
-            const res = await axios.post(`http://localhost:5000/api/complete-session`, payload);
+            const res = await axios.post(`${API_BASE_URL}/api/complete-session`, payload);
             if (res.data.success) {
                 // Handle Pre-Booking Request
                 if (treatmentData.needsPreBooking && treatmentData.preBookingDate) {
-                    await axios.post(`http://localhost:5000/api/pre-booking/request`, {
+                    await axios.post(`${API_BASE_URL}/api/pre-booking/request`, {
                         patientId: activePatient.patientId,
                         doctorId: session.mediId,
                         doctorName: `${session.firstName} ${session.lastName || ''}`,
@@ -300,7 +301,7 @@ const DoctorDashboard = () => {
 
                 // Handle Admission Request (Scheduled or Urgent)
                 if (finalStatus === 'Admitted') {
-                    await axios.post(`http://localhost:5000/api/admission/request`, {
+                    await axios.post(`${API_BASE_URL}/api/admission/request`, {
                         appointmentId: activeId,
                         patientId: activePatient.patientId,
                         patientName: activePatient.patientName,
@@ -314,7 +315,7 @@ const DoctorDashboard = () => {
                 }
 
                 if (finalStatus !== 'Completed') {
-                    await axios.put(`http://localhost:5000/api/update-appointment-status/${activeId}`, {
+                    await axios.put(`${API_BASE_URL}/api/update-appointment-status/${activeId}`, {
                         status: finalStatus,
                         admissionDate: payload.admissionDate
                     });
@@ -342,7 +343,7 @@ const DoctorDashboard = () => {
 
     const handleUpdateIPD = async (appointmentId, field, value) => {
         try {
-            await axios.put(`http://localhost:5000/api/update-appointment-status/${appointmentId}`, { [field]: value });
+            await axios.put(`${API_BASE_URL}/api/update-appointment-status/${appointmentId}`, { [field]: value });
             fetchDoctorQueue();
             fetchInPatients();
         } catch (err) {
@@ -466,7 +467,7 @@ const DoctorDashboard = () => {
                     <Stack spacing={1.5} alignItems="center" sx={{ textAlign: 'center' }}>
                         <Box sx={{ position: 'relative' }}>
                             <Avatar
-                                src={session.photoUrl ? `http://localhost:5000/${session.photoUrl}` : ''}
+                                src={session.photoUrl ? `${API_BASE_URL}/${session.photoUrl}` : ''}
                                 sx={{ width: 64, height: 64, bgcolor: '#6366f1', fontWeight: 'bold', fontSize: 24, border: '3px solid rgba(99,102,241,0.5)', boxShadow: '0 0 20px rgba(99,102,241,0.4)' }}
                             >
                                 {session.firstName?.charAt(0)}
@@ -813,7 +814,7 @@ const DoctorDashboard = () => {
                                             <Typography variant="caption" sx={{ color: '#475569', fontWeight: 900, fontSize: '0.6rem', letterSpacing: 1.5, mb: 0.5, display: 'block' }}>PATIENT NAME</Typography>
                                             <Stack direction="row" spacing={2} alignItems="center">
                                                 <Avatar
-                                                    src={activePatient.photoUrl ? `http://localhost:5000/${activePatient.photoUrl}` : ''}
+                                                    src={activePatient.photoUrl ? `${API_BASE_URL}/${activePatient.photoUrl}` : ''}
                                                     sx={{ bgcolor: 'rgba(99,102,241,0.15)', color: '#818cf8', width: 44, height: 44, fontWeight: 900, border: '1px solid rgba(99,102,241,0.2)' }}
                                                 >
                                                     {activePatient.patientName?.charAt(0)}
@@ -975,7 +976,7 @@ const DoctorDashboard = () => {
                                                 <Typography variant="caption" sx={{ color: '#475569', fontWeight: 900, fontSize: '0.6rem', letterSpacing: 1.5, mb: 0.5, display: 'block' }}>PATIENT NAME</Typography>
                                                 <Stack direction="row" spacing={1.5} alignItems="center">
                                                     <Avatar
-                                                        src={apt.photoUrl ? `http://localhost:5000/${apt.photoUrl}` : ''}
+                                                        src={apt.photoUrl ? `${API_BASE_URL}/${apt.photoUrl}` : ''}
                                                         sx={{ bgcolor: 'rgba(99,102,241,0.15)', color: '#818cf8', width: 32, height: 32, fontSize: 13, fontWeight: 900, border: '1px solid rgba(255,255,255,0.05)' }}
                                                     >
                                                         {apt.patientName?.charAt(0)}
@@ -1111,7 +1112,7 @@ const DoctorDashboard = () => {
                                             <TableCell sx={{ borderBottom: '1px solid rgba(255,255,255,0.04)', py: 2 }}>
                                                 <Stack direction="row" spacing={1.5} alignItems="center">
                                                     <Avatar
-                                                        src={p.photoUrl ? `http://localhost:5000/${p.photoUrl}` : ''}
+                                                        src={p.photoUrl ? `${API_BASE_URL}/${p.photoUrl}` : ''}
                                                         sx={{ bgcolor: 'rgba(99,102,241,0.15)', color: '#818cf8', width: 36, height: 36, fontSize: 14, fontWeight: 900, border: '1px solid rgba(255,255,255,0.05)' }}
                                                     >
                                                         {p.patientName?.charAt(0)}
@@ -1205,7 +1206,7 @@ const DoctorDashboard = () => {
                                         }}
                                     >
                                         <Avatar
-                                            src={p.photoUrl ? `http://localhost:5000/${p.photoUrl}` : ''}
+                                            src={p.photoUrl ? `${API_BASE_URL}/${p.photoUrl}` : ''}
                                             sx={{ width: 64, height: 64, mx: 'auto', mb: 1.5, bgcolor: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 24, fontWeight: 700, border: '2px solid rgba(99,102,241,0.2)' }}
                                         >
                                             {p.firstName?.charAt(0)}
@@ -1316,7 +1317,7 @@ const DoctorDashboard = () => {
                         </Stack>
                         <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3, p: 2.5, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <Avatar
-                                src={selectedPatient.photoUrl ? `http://localhost:5000/${selectedPatient.photoUrl}` : ''}
+                                src={selectedPatient.photoUrl ? `${API_BASE_URL}/${selectedPatient.photoUrl}` : ''}
                                 sx={{ width: 72, height: 72, borderRadius: 3, bgcolor: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 28, fontWeight: 900, border: '2px solid rgba(99,102,241,0.2)' }}
                             >
                                 {selectedPatient.firstName?.charAt(0)}
@@ -1358,7 +1359,7 @@ const DoctorDashboard = () => {
                                                 <Button
                                                     size="small"
                                                     startIcon={<LabIcon sx={{ fontSize: '0.8rem' }} />}
-                                                    onClick={() => window.open(`http://localhost:5000/${h.reportUrl}`, '_blank')}
+                                                    onClick={() => window.open(`${API_BASE_URL}/${h.reportUrl}`, '_blank')}
                                                     sx={{ mt: 0.5, color: '#22d3ee', fontSize: '0.65rem', fontWeight: 900, p: 0 }}
                                                 >
                                                     VIEW REPORT
