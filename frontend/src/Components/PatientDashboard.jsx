@@ -493,8 +493,8 @@ const PatientDashboard = () => {
   const handleHospitalChange = async (hId, hName) => {
     setBookingData({ ...bookingData, hospitalId: hId, hospitalName: hName, doctorId: '', doctorName: '' });
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/get-records?vault=${hId}`);
-      setDoctors(res.data.filter(r => r.category === 'Doctors'));
+      const res = await axios.get(`${API_BASE_URL}/api/hospital-staff?role=DOCTOR&hospitalMediId=${hId}`);
+      setDoctors(res.data);
     } catch (err) { console.error("Error fetching doctors"); }
   };
 
@@ -1205,7 +1205,7 @@ const PatientDashboard = () => {
                       select fullWidth label="Select Doctor"
                       value={bookingData.doctorId}
                       onChange={(e) => {
-                        const doc = doctors.find(d => d._id === e.target.value || d.mediId === e.target.value);
+                        const doc = doctors.find(d => d.mediId === e.target.value);
                         setBookingData({ ...bookingData, doctorId: doc?.mediId || e.target.value, doctorName: `${doc?.firstName || ''} ${doc?.lastName || ''}` });
                       }}
                       InputProps={{ sx: { color: 'white' } }}
