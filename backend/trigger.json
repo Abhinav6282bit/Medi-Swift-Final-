@@ -1,0 +1,7 @@
+{
+    "requesterId": "TEST-USER",
+    "requesterName": "Test Patient",
+    "lat": 10.0,
+    "lng": 10.0,
+    "emergencyType": "Cardiac"
+}
