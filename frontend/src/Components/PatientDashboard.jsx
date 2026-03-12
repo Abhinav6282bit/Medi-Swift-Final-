@@ -578,10 +578,10 @@ const PatientDashboard = () => {
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         zIndex: (theme) => theme.zIndex.drawer + 1
       }}>
-        <Toolbar>
-          <IconButton size="large" edge="start" color="inherit" sx={{ mr: 2 }} onClick={toggleDrawer(true)}><MenuIcon /></IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: '900', letterSpacing: -0.5 }}>Medi-Swift</Typography>
-          <Box sx={{ display: { xs: 'none', sm: 'block' }, mr: 3 }}>
+        <Toolbar sx={{ flexWrap: 'wrap', gap: { xs: 0.5, sm: 0 }, px: { xs: 1, sm: 3 } }}>
+          <IconButton size="large" edge="start" color="inherit" sx={{ mr: { xs: 0.5, sm: 2 } }} onClick={toggleDrawer(true)}><MenuIcon /></IconButton>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: '900', letterSpacing: -0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }}>Medi-Swift</Typography>
+          <Box sx={{ display: { xs: 'none', md: 'block' }, mr: 3 }}>
             <Typography variant="caption" sx={{
               border: '1px solid rgba(255,255,255,0.1)',
               px: 2, py: 1, borderRadius: 3,
@@ -597,37 +597,41 @@ const PatientDashboard = () => {
             color="error"
             onClick={() => navigate('/emergency-sos')}
             sx={{
-              mr: 2,
+              mr: { xs: 0.5, sm: 2 },
               fontWeight: 900,
               borderRadius: '12px',
-              px: 3,
+              px: { xs: 1.5, sm: 3 },
+              minWidth: { xs: 'auto', sm: 'auto' },
+              fontSize: { xs: '0.65rem', sm: '0.875rem' },
               animation: 'pulse 2s infinite',
               bgcolor: '#ef4444',
               boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
               '&:hover': { bgcolor: '#dc2626' }
             }}
           >
-            EMERGENCY SOS
+            <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>EMERGENCY </Box>SOS
           </Button>
           <Button
             variant="contained"
             onClick={() => navigate('/emergency-blood')}
             sx={{
-              mr: 3, fontWeight: 900, borderRadius: '12px', px: 3,
+              mr: { xs: 0.5, sm: 3 }, fontWeight: 900, borderRadius: '12px', px: { xs: 1.5, sm: 3 },
+              fontSize: { xs: '0.65rem', sm: '0.875rem' },
               animation: 'pulse-blood 2.5s infinite',
               bgcolor: '#e11d48',
               boxShadow: '0 0 15px rgba(225, 29, 72, 0.4)',
               '&:hover': { bgcolor: '#be123c' }
             }}
           >
-            EMERGENCY BLOOD
+            <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>EMERGENCY </Box>BLOOD
           </Button>
-          <IconButton color="inherit" onClick={handleNotificationClick} sx={{ mr: 2 }}>
+          <IconButton color="inherit" onClick={handleNotificationClick} sx={{ mr: { xs: 0, sm: 2 } }}>
             <Badge badgeContent={unreadCount} color="error" sx={{ '& .MuiBadge-badge': { fontWeight: 900 } }}>
               <NotificationsIcon />
             </Badge>
           </IconButton>
-          <Button color="inherit" onClick={handleLogout} startIcon={<LogoutIcon />} sx={{ fontWeight: 700 }}>Logout</Button>
+          <IconButton color="inherit" onClick={handleLogout} sx={{ display: { xs: 'flex', sm: 'none' } }}><LogoutIcon /></IconButton>
+          <Button color="inherit" onClick={handleLogout} startIcon={<LogoutIcon />} sx={{ fontWeight: 700, display: { xs: 'none', sm: 'inline-flex' } }}>Logout</Button>
         </Toolbar>
       </AppBar>
       <style>{`
@@ -652,7 +656,7 @@ const PatientDashboard = () => {
         PaperProps={{
           sx: {
             mt: 1.5,
-            width: 380,
+            width: { xs: '90vw', sm: 380 },
             maxHeight: 500,
             bgcolor: 'rgba(15, 23, 42, 0.95)',
             backdropFilter: 'blur(20px)',

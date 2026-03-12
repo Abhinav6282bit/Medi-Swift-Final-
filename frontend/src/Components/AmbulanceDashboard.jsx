@@ -349,31 +349,32 @@ const AmbulanceDashboard = () => {
   return (
     <Box sx={{ height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a', overflow: 'hidden' }}>
       <AppBar position="static" elevation={0} sx={{ bgcolor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar sx={{ bgcolor: isOnDuty ? '#10b981' : '#f43f5e', width: 40, height: 40 }}><LocalHospital /></Avatar>
+        <Toolbar sx={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, py: { xs: 1, sm: 0 }, px: { xs: 1.5, sm: 3 } }}>
+          <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }}>
+            <Avatar sx={{ bgcolor: isOnDuty ? '#10b981' : '#f43f5e', width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}><LocalHospital sx={{ fontSize: { xs: 18, sm: 24 } }} /></Avatar>
             <Box>
-              <Typography variant="subtitle1" fontWeight="800" sx={{ color: '#f8fafc', lineHeight: 1 }}>MEDI-SWIFT DISPATCH</Typography>
-              <Typography variant="caption" sx={{ color: isOnDuty ? '#10b981' : '#94a3b8', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                {isOnDuty && <Box className="pulse-dot" />} {isOnDuty ? 'System Active' : 'System Standby'}
+              <Typography variant="subtitle1" fontWeight="800" sx={{ color: '#f8fafc', lineHeight: 1, fontSize: { xs: '0.8rem', sm: '1rem' } }}>MEDI-SWIFT DISPATCH</Typography>
+              <Typography variant="caption" sx={{ color: isOnDuty ? '#10b981' : '#94a3b8', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>
+                {isOnDuty && <Box className="pulse-dot" />} {isOnDuty ? 'Active' : 'Standby'}
               </Typography>
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'rgba(255,255,255,0.05)', px: 2, py: 0.8, borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)' }}>
-              <Typography variant="caption" sx={{ color: '#fff', mr: 1, fontWeight: 'bold' }}>ON DUTY</Typography>
+          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'rgba(255,255,255,0.05)', px: { xs: 1, sm: 2 }, py: 0.5, borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)' }}>
+              <Typography variant="caption" sx={{ color: '#fff', mr: 0.5, fontWeight: 'bold', fontSize: { xs: '0.6rem', sm: '0.75rem' } }}>DUTY</Typography>
               <Switch size="small" checked={isOnDuty} onChange={handleToggleDuty} color="success" />
             </Box>
             <IconButton
+              size="small"
               sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.05)' }}
               onClick={() => setOpenSirenSettings(true)}
               title="Notification alert"
             >
-              <AlarmIcon sx={{ color: sirenConfig.id === 'silent' ? '#94a3b8' : '#ef4444' }} />
+              <AlarmIcon sx={{ color: sirenConfig.id === 'silent' ? '#94a3b8' : '#ef4444', fontSize: { xs: 18, sm: 24 } }} />
             </IconButton>
-            <IconButton sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.05)' }} onClick={() => navigate('/ambulance-history')}><CheckIcon /></IconButton>
-            <Button variant="outlined" size="small" sx={{ borderColor: 'rgba(255,255,255,0.2)', color: '#fff' }} onClick={() => { localStorage.clear(); navigate('/'); }} startIcon={<LogoutIcon />}>Exit</Button>
+            <IconButton size="small" sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.05)' }} onClick={() => navigate('/ambulance-history')}><CheckIcon sx={{ fontSize: { xs: 18, sm: 24 } }} /></IconButton>
+            <IconButton size="small" sx={{ color: '#f87171', bgcolor: 'rgba(255,255,255,0.05)' }} onClick={() => { localStorage.clear(); navigate('/'); }}><LogoutIcon sx={{ fontSize: { xs: 18, sm: 24 } }} /></IconButton>
           </Stack>
         </Toolbar>
       </AppBar>
@@ -405,14 +406,14 @@ const AmbulanceDashboard = () => {
           </Box>
         )}
 
-        <Paper sx={{ position: 'absolute', top: 20, left: 20, p: 2, bgcolor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(10px)', color: 'white', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', zIndex: 1000 }}>
-          <Typography variant="caption" sx={{ opacity: 0.6, display: 'block' }}>DRIVER UNIT</Typography>
-          <Typography variant="body1" fontWeight="bold">{driverData.name}</Typography>
-          <Typography variant="caption" sx={{ color: '#38bdf8' }}>#{driverData.mediId}</Typography>
+        <Paper sx={{ position: 'absolute', top: { xs: 8, sm: 20 }, left: { xs: 8, sm: 20 }, p: { xs: 1.2, sm: 2 }, bgcolor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(10px)', color: 'white', borderRadius: 3, border: '1px solid rgba(255,255,255,0.1)', zIndex: 1000, maxWidth: { xs: 160, sm: 'none' } }}>
+          <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', fontSize: { xs: '0.55rem', sm: '0.75rem' } }}>DRIVER UNIT</Typography>
+          <Typography variant="body2" fontWeight="bold" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{driverData.name}</Typography>
+          <Typography variant="caption" sx={{ color: '#38bdf8', fontSize: { xs: '0.55rem', sm: '0.75rem' } }}>#{driverData.mediId}</Typography>
         </Paper>
 
-        <Box sx={{ position: 'absolute', bottom: 0, width: '100%', p: 2, display: 'flex', justifyContent: 'center', zIndex: 1000 }}>
-          <Paper sx={{ maxWidth: 600, width: '100%', p: 3, borderRadius: 6, bgcolor: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(20px)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+        <Box sx={{ position: 'absolute', bottom: 0, width: '100%', p: { xs: 1, sm: 2 }, display: 'flex', justifyContent: 'center', zIndex: 1000 }}>
+          <Paper sx={{ maxWidth: 600, width: '100%', p: { xs: 2, sm: 3 }, borderRadius: { xs: 4, sm: 6 }, bgcolor: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(20px)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
             {activeEmergency ? (
               <Stack spacing={2.5}>
                 {/* MISSION HEADER */}

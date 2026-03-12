@@ -131,28 +131,39 @@ const HomePage = () => {
                         top: 0,
                         left: 0,
                         zIndex: 1300,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        maxHeight: 'min(250px, 30vw)'
                     }}
                     onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 />
                 {/* --- NAVIGATION BAR --- */}
                 <AppBar position="sticky" color="transparent" elevation={0}>
-                    <Toolbar sx={{ height: '80px', px: 2, justifyContent: 'flex-end' }}>
+                    <Toolbar sx={{ height: { xs: 60, sm: 80 }, px: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
 
                         {/* --- NEW SOS NAVBAR BUTTON --- */}
                         <Button variant="contained" color="error" onClick={() => navigate('/emergency-sos')}
-                            sx={{ mr: 3, fontWeight: 'bold', borderRadius: '20px', px: 3, animation: 'pulse 2s infinite', bgcolor: '#d32f2f', '&:hover': { bgcolor: '#b71c1c' } }}>EMERGENCY SOS</Button>
-                        <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Home</Button>
-                        <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>Our Service</Button>
-                        <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' })}>About Us</Button>
-                        <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => navigate('/faq')}>FAQ</Button>
-                        <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => document.getElementById('contact-us')?.scrollIntoView({ behavior: 'smooth' })}>Contact Us</Button>
+                            sx={{ mr: { xs: 1, md: 3 }, fontWeight: 'bold', borderRadius: '20px', px: { xs: 2, sm: 3 }, fontSize: { xs: '0.7rem', sm: '0.875rem' }, animation: 'pulse 2s infinite', bgcolor: '#d32f2f', '&:hover': { bgcolor: '#b71c1c' } }}>SOS</Button>
+                        <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0 }}>
+                            <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Home</Button>
+                            <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}>Our Service</Button>
+                            <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' })}>About Us</Button>
+                            <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => navigate('/faq')}>FAQ</Button>
+                            <Button sx={{ color: '#000', fontWeight: 600 }} onClick={() => document.getElementById('contact-us')?.scrollIntoView({ behavior: 'smooth' })}>Contact Us</Button>
+                        </Box>
                     </Toolbar>
                 </AppBar>
 
                 {/* --- LOGIN CARD --- */}
-                <Box sx={{ position: 'absolute', top: '55%', left: '80%', transform: 'translate(-50%, -50%)', width: '480px' }}>
-                    <Paper elevation={15} sx={{ p: 5, borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.36)', textAlign: 'center', backdropFilter: 'blur(5px)' }}>
+                <Box sx={{ 
+                    position: { xs: 'relative', md: 'absolute' }, 
+                    top: { xs: 'auto', md: '55%' }, 
+                    left: { xs: 'auto', md: '80%' }, 
+                    transform: { xs: 'none', md: 'translate(-50%, -50%)' }, 
+                    width: { xs: '90%', sm: '420px', md: '480px' },
+                    mx: { xs: 'auto', md: 0 },
+                    py: { xs: 4, md: 0 }
+                }}>
+                    <Paper elevation={15} sx={{ p: { xs: 3, sm: 5 }, borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.36)', textAlign: 'center', backdropFilter: 'blur(5px)' }}>
                         <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 4, fontFamily: 'Times New Roman', color: '#14222f' }}>
                             Medi-Swift
                         </Typography>
@@ -211,7 +222,7 @@ const HomePage = () => {
                     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
                     backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
                 }}>
-                    <Paper elevation={10} sx={{ p: 4, width: '400px', borderRadius: 4, bgcolor: 'white', position: 'relative' }}>
+                    <Paper elevation={10} sx={{ p: 4, width: { xs: '90vw', sm: '400px' }, maxWidth: 400, borderRadius: 4, bgcolor: 'white', position: 'relative' }}>
                         <Button onClick={() => setOpenForgot(false)} sx={{ position: 'absolute', top: 10, right: 10 }}>X</Button>
                         <Typography variant="h5" fontWeight="bold" gutterBottom>Reset Password</Typography>
 
