@@ -1570,7 +1570,10 @@ exports.requestDischarge = async (req, res) => {
     try {
         const apt = await Appointment.findById(req.params.id);
         if (!apt) return res.status(404).json({ success: false, message: 'Appointment not found' });
-        if (!apt.isAdmitted) return res.status(400).json({ success: false, message: 'Patient is not admitted' });
+        
+        // Relaxing the isAdmitted check:
+        // Even if the admission flag was missed during manual bed allocation,
+        // if a discharge is explicitly requested from the bed, we proceed.
 
         apt.dischargeRequested = true;
         await apt.save();

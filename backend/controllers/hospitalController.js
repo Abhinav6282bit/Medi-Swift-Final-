@@ -74,6 +74,43 @@ exports.updateBedStatus = async (req, res) => {
             { status, patientName: patientName || null, patientId: patientId || null },
             { new: true }
         );
+
+        // If assigning a patient to a bed, try to find their active appointment and link it
+        if (status === 'Occupied' || status === 'Reserved') {
+            if (patientId) {
+                // Find most recent appointment for this patient that is not yet discharged and not billed
+                const apt = await Appointment.findOne({ 
+                    patientId: patientId,
+                    ipdBillStatus: 'None'
+                }).sort({ date: -1 });
+
+                if (apt && !apt.isAdmitted) {
+                    apt.isAdmitted = true;
+                    apt.assignedBed = updatedBed.bedNumber;
+                    apt.assignedWard = updatedBed.ward;
+                    apt.admissionDate = new Date();
+                    await apt.save();
+                }
+            } else if (patientName) {
+                // Fallback by name
+                const apt = await Appointment.findOne({ 
+                    patientName: { $regex: new RegExp('^' + patientName + '$', 'i') },
+                    ipdBillStatus: 'None'
+                }).sort({ date: -1 });
+
+                if (apt && !apt.isAdmitted) {
+                    apt.isAdmitted = true;
+                    apt.assignedBed = updatedBed.bedNumber;
+                    apt.assignedWard = updatedBed.ward;
+                    apt.admissionDate = new Date();
+                    await apt.save();
+                }
+            }
+        } else if (status === 'Available') {
+            // If marking bed as Available manually, we might want to unlink the appointment
+            // But discharge process handles this typically. If done manually, we just free the bed.
+        }
+
         res.json({ success: true, bed: updatedBed });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
