@@ -1137,7 +1137,7 @@ exports.clearAllNotifications = async (req, res) => {
 exports.uploadLabReport = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded" });
-        const filePath = `http://localhost:5000/uploads/${req.file.filename}`;
+        const filePath = `uploads/${req.file.filename}`;
         res.json({ success: true, url: filePath });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
