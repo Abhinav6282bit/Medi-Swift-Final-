@@ -19,7 +19,7 @@ const AmbulanceHistory = () => {
         };
         if (user.mediId) fetchHistory();
     }, [user.mediId]);
-
+     
     return (
         <Box sx={{ p: 4, bgcolor: '#121212', minHeight: '100vh', color: 'white' }}>
             <Button startIcon={<BackIcon />} onClick={() => navigate(-1)} sx={{ color: 'white', mb: 3 }}>
