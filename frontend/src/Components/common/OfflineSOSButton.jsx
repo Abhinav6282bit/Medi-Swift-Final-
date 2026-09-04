@@ -1,77 +1,151 @@
-import React, { useState } from 'react';
-import { Phone, ShieldAlert } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Phone, ShieldAlert, MapPin, CheckCircle } from 'lucide-react';
 
 const OfflineSOSButton = () => {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [cachedLoc, setCachedLoc] = useState(null);
+
+  // Pre-fetch and cache location when component mounts (or while online)
+  useEffect(() => {
+    // Check if location is already saved in localStorage
+    const savedLoc = localStorage.getItem('mediswift_cached_location');
+    if (savedLoc) {
+      try {
+        setCachedLoc(JSON.parse(savedLoc));
+      } catch (e) {
+        console.error('Failed to parse cached location', e);
+      }
+    }
+
+    if (navigator.geolocation) {
+      const updateLocationCache = (position) => {
+        const locData = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setCachedLoc(locData);
+        localStorage.setItem('mediswift_cached_location', JSON.stringify(locData));
+      };
+
+      // Try quick low-accuracy pre-fetch to store in localStorage
+      navigator.geolocation.getCurrentPosition(
+        updateLocationCache,
+        (err) => console.log('Location pre-fetch notice:', err.message),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+      );
+    }
+  }, []);
 
   const triggerSOS = () => {
     setLoading(true);
-    setStatusMsg('Locating device & preparing SMS...');
+    setStatusMsg('Acquiring location coordinates...');
 
     const smsNumber = '+916282348375';
 
-    const sendSMS = (locationUrl = '') => {
+    const sendSMS = (lat, lng, sourceLabel = '') => {
+      let locationUrl = '';
+      if (lat && lng) {
+        locationUrl = `https://maps.google.com/?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
+      }
+
       const messageBody = locationUrl
-        ? `CRITICAL SOS EMERGENCY! Location: ${locationUrl}`
+        ? `CRITICAL SOS EMERGENCY! Location: ${locationUrl}${sourceLabel ? ` (${sourceLabel})` : ''}`
         : `CRITICAL SOS EMERGENCY! Location unavailable. Please send help immediately!`;
 
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const separator = isIOS ? '&' : '?';
       const smsUri = `sms:${smsNumber}${separator}body=${encodeURIComponent(messageBody)}`;
 
-      setStatusMsg('Triggering SMS app...');
+      setStatusMsg('Opening SMS app...');
       setLoading(false);
 
       window.location.href = smsUri;
     };
 
     if (!navigator.geolocation) {
-      sendSMS();
+      // Use cached location if geolocation API is unsupported
+      if (cachedLoc && cachedLoc.lat && cachedLoc.lng) {
+        sendSMS(cachedLoc.lat, cachedLoc.lng, 'Cached');
+      } else {
+        sendSMS();
+      }
       return;
     }
 
-    // Step 1: Attempt to get location with high accuracy (and fallback to low accuracy / cached location)
-    const getPosSuccess = (position) => {
-      const { latitude, longitude } = position.coords;
-      const locationUrl = `https://maps.google.com/?q=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-      sendSMS(locationUrl);
-    };
-
-    const getPosLowAccuracy = () => {
-      navigator.geolocation.getCurrentPosition(
-        getPosSuccess,
-        (err) => {
-          console.warn('Low accuracy geolocation also failed:', err.message);
-          if (err.code === 1) {
-            setStatusMsg('⚠️ Location permission is blocked in browser settings.');
-          }
-          sendSMS();
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 6000,
-          maximumAge: 300000 // Allow 5-minute cached position for instant retrieval
-        }
-      );
-    };
-
+    // Step 1: Try live GPS lookup (fast 4s timeout)
     navigator.geolocation.getCurrentPosition(
-      getPosSuccess,
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        // Save new fresh location
+        const locData = {
+          lat: latitude,
+          lng: longitude,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setCachedLoc(locData);
+        localStorage.setItem('mediswift_cached_location', JSON.stringify(locData));
+        sendSMS(latitude, longitude, 'Live GPS');
+      },
       (error) => {
-        console.warn('High accuracy geolocation failed, trying low accuracy fallback:', error.message);
-        getPosLowAccuracy();
+        console.warn('Live GPS failed, checking cached position:', error.message);
+        
+        // Step 2: Fall back to localStorage cached location if Airplane mode blocked live GPS
+        const savedLoc = localStorage.getItem('mediswift_cached_location');
+        if (savedLoc) {
+          try {
+            const parsed = JSON.parse(savedLoc);
+            if (parsed.lat && parsed.lng) {
+              setStatusMsg('Using last known cached position...');
+              sendSMS(parsed.lat, parsed.lng, `Last Known ${parsed.time || ''}`);
+              return;
+            }
+          } catch (e) {
+            console.error('Error parsing stored location', e);
+          }
+        }
+
+        if (error.code === 1) {
+          setStatusMsg('⚠️ Location permission is blocked in site settings.');
+        } else {
+          setStatusMsg('⚠️ Device GPS unavailable. Please enable Location/GPS on your phone.');
+        }
+
+        // Final fallback: send SMS without coordinates
+        sendSMS();
       },
       {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 60000 // Allow 1-minute cached position
+        enableHighAccuracy: false, // Low accuracy works faster when offline
+        timeout: 4000,
+        maximumAge: 300000 // 5 min cache allowance
       }
     );
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
+      
+      {/* Location Status Indicator */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.4rem',
+        padding: '0.4rem 0.8rem',
+        borderRadius: '12px',
+        backgroundColor: cachedLoc ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+        border: `1px solid ${cachedLoc ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+        fontSize: '0.8rem',
+        color: cachedLoc ? '#34d399' : '#f87171'
+      }}>
+        {cachedLoc ? <CheckCircle size={14} /> : <MapPin size={14} />}
+        <span>
+          {cachedLoc
+            ? `Location Ready: ${cachedLoc.lat.toFixed(4)}, ${cachedLoc.lng.toFixed(4)}`
+            : 'Acquiring GPS location...'}
+        </span>
+      </div>
+
       <button
         onClick={triggerSOS}
         disabled={loading}
@@ -112,11 +186,12 @@ const OfflineSOSButton = () => {
       {statusMsg && (
         <p style={{
           color: '#ef4444',
-          fontSize: '0.9rem',
+          fontSize: '0.85rem',
           fontWeight: '600',
           textAlign: 'center',
           animation: 'fadeIn 0.5s ease-in-out',
-          margin: 0
+          margin: 0,
+          maxWidth: '320px'
         }}>
           {statusMsg}
         </p>
