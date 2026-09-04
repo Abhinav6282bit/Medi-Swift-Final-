@@ -7,47 +7,50 @@ const OfflineSOSButton = () => {
 
   const triggerSOS = () => {
     setLoading(true);
-    setStatusMsg('Locating device...');
+    setStatusMsg('Locating device & preparing SMS...');
+
+    const smsNumber = '+916282348375';
+
+    const sendSMS = (locationUrl = '') => {
+      const messageBody = locationUrl
+        ? `CRITICAL SOS EMERGENCY! Location: ${locationUrl}`
+        : `CRITICAL SOS EMERGENCY! Location unavailable. Please send help immediately!`;
+
+      // Detect iOS vs Android SMS URI scheme syntax
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const separator = isIOS ? '&' : '?';
+      const smsUri = `sms:${smsNumber}${separator}body=${encodeURIComponent(messageBody)}`;
+
+      setStatusMsg('Triggering SMS app...');
+      setLoading(false);
+
+      // Open native SMS app
+      window.location.href = smsUri;
+    };
 
     if (!navigator.geolocation) {
-      handleSOSFallback('Geolocation not supported by device');
+      sendSMS();
       return;
     }
 
+    // Try to get location with a fast 4-second timeout
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const smsNumber = '+916282348375';
-        const messageBody = `CRITICAL SOS EMERGENCY! Location: https://maps.google.com/?q=${latitude},${longitude}`;
-        
-        // Construct standard SMS URI
-        const smsUri = `sms:${smsNumber}?body=${encodeURIComponent(messageBody)}`;
-        
-        setStatusMsg('Location acquired! Triggering cellular SMS...');
-        setLoading(false);
-        
-        // Open the native cellular SMS app
-        window.location.href = smsUri;
+        const locationUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
+        sendSMS(locationUrl);
       },
       (error) => {
-        console.error('Geolocation error:', error);
-        handleSOSFallback(`Location access denied/failed: ${error.message}`);
+        console.warn('Geolocation failed or denied:', error.message);
+        // Still open the SMS app to the user's number even if location fails
+        sendSMS();
       },
       {
         enableHighAccuracy: true,
-        timeout: 8000,
+        timeout: 4000,
         maximumAge: 0
       }
     );
-  };
-
-  const handleSOSFallback = (reason) => {
-    console.warn(`SOS Geolocation fallback triggered due to: ${reason}`);
-    setStatusMsg('Location failed. Initiating Emergency Voice Call...');
-    setLoading(false);
-    
-    // Fallback to national emergency number
-    window.location.href = 'tel:112';
   };
 
   return (
