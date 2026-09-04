@@ -16,7 +16,6 @@ const OfflineSOSButton = () => {
         ? `CRITICAL SOS EMERGENCY! Location: ${locationUrl}`
         : `CRITICAL SOS EMERGENCY! Location unavailable. Please send help immediately!`;
 
-      // Detect iOS vs Android SMS URI scheme syntax
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const separator = isIOS ? '&' : '?';
       const smsUri = `sms:${smsNumber}${separator}body=${encodeURIComponent(messageBody)}`;
@@ -24,7 +23,6 @@ const OfflineSOSButton = () => {
       setStatusMsg('Triggering SMS app...');
       setLoading(false);
 
-      // Open native SMS app
       window.location.href = smsUri;
     };
 
@@ -33,22 +31,41 @@ const OfflineSOSButton = () => {
       return;
     }
 
-    // Try to get location with a fast 4-second timeout
+    // Step 1: Attempt to get location with high accuracy (and fallback to low accuracy / cached location)
+    const getPosSuccess = (position) => {
+      const { latitude, longitude } = position.coords;
+      const locationUrl = `https://maps.google.com/?q=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+      sendSMS(locationUrl);
+    };
+
+    const getPosLowAccuracy = () => {
+      navigator.geolocation.getCurrentPosition(
+        getPosSuccess,
+        (err) => {
+          console.warn('Low accuracy geolocation also failed:', err.message);
+          if (err.code === 1) {
+            setStatusMsg('⚠️ Location permission is blocked in browser settings.');
+          }
+          sendSMS();
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 6000,
+          maximumAge: 300000 // Allow 5-minute cached position for instant retrieval
+        }
+      );
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const locationUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
-        sendSMS(locationUrl);
-      },
+      getPosSuccess,
       (error) => {
-        console.warn('Geolocation failed or denied:', error.message);
-        // Still open the SMS app to the user's number even if location fails
-        sendSMS();
+        console.warn('High accuracy geolocation failed, trying low accuracy fallback:', error.message);
+        getPosLowAccuracy();
       },
       {
         enableHighAccuracy: true,
-        timeout: 4000,
-        maximumAge: 0
+        timeout: 5000,
+        maximumAge: 60000 // Allow 1-minute cached position
       }
     );
   };
