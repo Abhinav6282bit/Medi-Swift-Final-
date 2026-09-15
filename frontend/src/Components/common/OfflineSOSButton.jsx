@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, ShieldAlert, MapPin, CheckCircle } from 'lucide-react';
+import { Phone, ShieldAlert, MapPin, CheckCircle, Radio } from 'lucide-react';
 
 const OfflineSOSButton = () => {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [cachedLoc, setCachedLoc] = useState(null);
 
-  // Pre-fetch and cache location when component mounts (or while online)
+  // Pre-fetch and cache location when component mounts
   useEffect(() => {
-    // Check if location is already saved in localStorage
     const savedLoc = localStorage.getItem('mediswift_cached_location');
     if (savedLoc) {
       try {
@@ -29,18 +28,17 @@ const OfflineSOSButton = () => {
         localStorage.setItem('mediswift_cached_location', JSON.stringify(locData));
       };
 
-      // Try quick low-accuracy pre-fetch to store in localStorage
       navigator.geolocation.getCurrentPosition(
         updateLocationCache,
-        (err) => console.log('Location pre-fetch notice:', err.message),
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+        (err) => console.log('Pre-fetch location info:', err.message),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 600000 }
       );
     }
   }, []);
 
   const triggerSOS = () => {
     setLoading(true);
-    setStatusMsg('Acquiring location coordinates...');
+    setStatusMsg('📡 Connecting to Satellite GPS... Locking coordinates...');
 
     const smsNumber = '+916282348375';
 
@@ -48,7 +46,7 @@ const OfflineSOSButton = () => {
       let finalLat = lat;
       let finalLng = lng;
 
-      // Fallback check: if lat/lng are missing, check localStorage!
+      // Check localStorage if lat/lng are missing
       if (!finalLat || !finalLng) {
         const saved = localStorage.getItem('mediswift_cached_location');
         if (saved) {
@@ -57,9 +55,10 @@ const OfflineSOSButton = () => {
             if (parsed && parsed.lat && parsed.lng) {
               finalLat = parsed.lat;
               finalLng = parsed.lng;
+              if (!sourceLabel) sourceLabel = 'Cached GPS';
             }
           } catch (e) {
-            console.error('Failed parsing saved location', e);
+            console.error('Error parsing stored location', e);
           }
         }
       }
@@ -84,20 +83,14 @@ const OfflineSOSButton = () => {
     };
 
     if (!navigator.geolocation) {
-      // Use cached location if geolocation API is unsupported
-      if (cachedLoc && cachedLoc.lat && cachedLoc.lng) {
-        sendSMS(cachedLoc.lat, cachedLoc.lng, 'Cached');
-      } else {
-        sendSMS();
-      }
+      sendSMS();
       return;
     }
 
-    // Step 1: Try live GPS lookup (fast 4s timeout)
+    // Read hardware satellite GPS with 20-second allowance for offline satellite lock
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        // Save new fresh location
         const locData = {
           lat: latitude,
           lng: longitude,
@@ -105,19 +98,19 @@ const OfflineSOSButton = () => {
         };
         setCachedLoc(locData);
         localStorage.setItem('mediswift_cached_location', JSON.stringify(locData));
-        sendSMS(latitude, longitude, 'Live GPS');
+        sendSMS(latitude, longitude, 'Live Satellite GPS');
       },
       (error) => {
-        console.warn('Live GPS failed, checking cached position:', error.message);
+        console.warn('Satellite GPS lock timed out or failed:', error.message);
         
-        // Step 2: Fall back to localStorage cached location if Airplane mode blocked live GPS
+        // Check cached storage fallback
         const savedLoc = localStorage.getItem('mediswift_cached_location');
         if (savedLoc) {
           try {
             const parsed = JSON.parse(savedLoc);
-            if (parsed.lat && parsed.lng) {
-              setStatusMsg('Using last known cached position...');
-              sendSMS(parsed.lat, parsed.lng, `Last Known ${parsed.time || ''}`);
+            if (parsed && parsed.lat && parsed.lng) {
+              setStatusMsg('Using last known cached GPS position...');
+              sendSMS(parsed.lat, parsed.lng, `Cached ${parsed.time || ''}`);
               return;
             }
           } catch (e) {
@@ -126,18 +119,17 @@ const OfflineSOSButton = () => {
         }
 
         if (error.code === 1) {
-          setStatusMsg('⚠️ Location permission is blocked in site settings.');
+          setStatusMsg('⚠️ Location permission is blocked in browser settings.');
         } else {
-          setStatusMsg('⚠️ Device GPS unavailable. Please enable Location/GPS on your phone.');
+          setStatusMsg('⚠️ Satellite GPS lock timed out. Sending alert SMS...');
         }
 
-        // Final fallback: send SMS without coordinates
         sendSMS();
       },
       {
-        enableHighAccuracy: false, // Low accuracy works faster when offline
-        timeout: 4000,
-        maximumAge: 300000 // 5 min cache allowance
+        enableHighAccuracy: true, // Read raw satellite hardware GPS
+        timeout: 20000,          // Give hardware GPS 20s to receive satellite data
+        maximumAge: 600000        // Allow up to 10-min cached position instantly
       }
     );
   };
@@ -145,23 +137,23 @@ const OfflineSOSButton = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
       
-      {/* Location Status Indicator */}
+      {/* Satellite / GPS Status Indicator */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.4rem',
-        padding: '0.4rem 0.8rem',
-        borderRadius: '12px',
-        backgroundColor: cachedLoc ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-        border: `1px solid ${cachedLoc ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-        fontSize: '0.8rem',
-        color: cachedLoc ? '#34d399' : '#f87171'
+        gap: '0.5rem',
+        padding: '0.4rem 0.9rem',
+        borderRadius: '14px',
+        backgroundColor: cachedLoc ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+        border: `1px solid ${cachedLoc ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+        fontSize: '0.82rem',
+        color: cachedLoc ? '#34d399' : '#fbbf24'
       }}>
-        {cachedLoc ? <CheckCircle size={14} /> : <MapPin size={14} />}
+        {cachedLoc ? <CheckCircle size={15} /> : <Radio size={15} style={{ animation: 'pulse 1s infinite' }} />}
         <span>
           {cachedLoc
-            ? `Location Ready: ${cachedLoc.lat.toFixed(4)}, ${cachedLoc.lng.toFixed(4)}`
-            : 'Acquiring GPS location...'}
+            ? `Satellite GPS Ready: ${cachedLoc.lat.toFixed(4)}, ${cachedLoc.lng.toFixed(4)}`
+            : 'Acquiring Satellite GPS Lock...'}
         </span>
       </div>
 
