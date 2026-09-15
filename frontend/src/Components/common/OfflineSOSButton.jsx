@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, ShieldAlert, MapPin, CheckCircle, Radio } from 'lucide-react';
+import { Phone, ShieldAlert, MapPin, CheckCircle, Radio, Navigation, Edit3 } from 'lucide-react';
 
 const OfflineSOSButton = () => {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [cachedLoc, setCachedLoc] = useState(null);
+  const [customLandmark, setCustomLandmark] = useState('');
 
-  // Pre-fetch and cache location when component mounts
+  // Load saved location & landmark on mount
   useEffect(() => {
     const savedLoc = localStorage.getItem('mediswift_cached_location');
     if (savedLoc) {
@@ -17,77 +18,30 @@ const OfflineSOSButton = () => {
       }
     }
 
-    if (navigator.geolocation) {
-      const updateLocationCache = (position) => {
-        const locData = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setCachedLoc(locData);
-        localStorage.setItem('mediswift_cached_location', JSON.stringify(locData));
-      };
-
-      navigator.geolocation.getCurrentPosition(
-        updateLocationCache,
-        (err) => console.log('Pre-fetch location info:', err.message),
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 600000 }
-      );
+    const savedLandmark = localStorage.getItem('mediswift_manual_landmark');
+    if (savedLandmark) {
+      setCustomLandmark(savedLandmark);
     }
   }, []);
 
-  const triggerSOS = () => {
+  // Save manual landmark to localStorage
+  const handleLandmarkChange = (e) => {
+    const value = e.target.value;
+    setCustomLandmark(value);
+    localStorage.setItem('mediswift_manual_landmark', value);
+  };
+
+  // User-triggered explicit GPS Fetch (Guarantees Chrome shows permission dialog)
+  const fetchGPSLocation = () => {
     setLoading(true);
-    setStatusMsg('📡 Connecting to Satellite GPS... Locking coordinates...');
-
-    const smsNumber = '+916282348375';
-
-    const sendSMS = (lat, lng, sourceLabel = '') => {
-      let finalLat = lat;
-      let finalLng = lng;
-
-      // Check localStorage if lat/lng are missing
-      if (!finalLat || !finalLng) {
-        const saved = localStorage.getItem('mediswift_cached_location');
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (parsed && parsed.lat && parsed.lng) {
-              finalLat = parsed.lat;
-              finalLng = parsed.lng;
-              if (!sourceLabel) sourceLabel = 'Cached GPS';
-            }
-          } catch (e) {
-            console.error('Error parsing stored location', e);
-          }
-        }
-      }
-
-      let locationUrl = '';
-      if (finalLat && finalLng) {
-        locationUrl = `https://maps.google.com/?q=${Number(finalLat).toFixed(6)},${Number(finalLng).toFixed(6)}`;
-      }
-
-      const messageBody = locationUrl
-        ? `CRITICAL SOS EMERGENCY! Location: ${locationUrl}`
-        : `CRITICAL SOS EMERGENCY! Location unavailable. Please send help immediately!`;
-
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const separator = isIOS ? '&' : '?';
-      const smsUri = `sms:${smsNumber}${separator}body=${encodeURIComponent(messageBody)}`;
-
-      setStatusMsg('Opening SMS app...');
-      setLoading(false);
-
-      window.location.href = smsUri;
-    };
+    setStatusMsg('Acquiring live GPS coordinates...');
 
     if (!navigator.geolocation) {
-      sendSMS();
+      setStatusMsg('⚠️ Geolocation API unsupported by browser.');
+      setLoading(false);
       return;
     }
 
-    // Read hardware satellite GPS with 20-second allowance for offline satellite lock
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -98,65 +52,159 @@ const OfflineSOSButton = () => {
         };
         setCachedLoc(locData);
         localStorage.setItem('mediswift_cached_location', JSON.stringify(locData));
-        sendSMS(latitude, longitude, 'Live Satellite GPS');
+        setStatusMsg('✅ Live GPS coordinates locked!');
+        setLoading(false);
       },
       (error) => {
-        console.warn('Satellite GPS lock timed out or failed:', error.message);
-        
-        // Check cached storage fallback
-        const savedLoc = localStorage.getItem('mediswift_cached_location');
-        if (savedLoc) {
-          try {
-            const parsed = JSON.parse(savedLoc);
-            if (parsed && parsed.lat && parsed.lng) {
-              setStatusMsg('Using last known cached GPS position...');
-              sendSMS(parsed.lat, parsed.lng, `Cached ${parsed.time || ''}`);
-              return;
-            }
-          } catch (e) {
-            console.error('Error parsing stored location', e);
-          }
-        }
-
+        console.warn('Manual GPS fetch error:', error.message);
         if (error.code === 1) {
           setStatusMsg('⚠️ Location permission is blocked in browser settings.');
         } else {
-          setStatusMsg('⚠️ Satellite GPS lock timed out. Sending alert SMS...');
+          setStatusMsg('⚠️ GPS lock failed. You can type your location landmark below.');
         }
-
-        sendSMS();
+        setLoading(false);
       },
       {
-        enableHighAccuracy: true, // Read raw satellite hardware GPS
-        timeout: 20000,          // Give hardware GPS 20s to receive satellite data
-        maximumAge: 600000        // Allow up to 10-min cached position instantly
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       }
     );
   };
 
+  const triggerSOS = () => {
+    setLoading(true);
+    setStatusMsg('Preparing emergency SMS...');
+
+    const smsNumber = '+916282348375';
+
+    // Check cached location or live state
+    let lat = cachedLoc?.lat;
+    let lng = cachedLoc?.lng;
+
+    if (!lat || !lng) {
+      const savedLoc = localStorage.getItem('mediswift_cached_location');
+      if (savedLoc) {
+        try {
+          const parsed = JSON.parse(savedLoc);
+          if (parsed && parsed.lat && parsed.lng) {
+            lat = parsed.lat;
+            lng = parsed.lng;
+          }
+        } catch (e) {
+          console.error('Error parsing stored location', e);
+        }
+      }
+    }
+
+    let locationUrl = '';
+    if (lat && lng) {
+      locationUrl = `https://maps.google.com/?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
+    }
+
+    // Build rich SMS text with map link and custom landmark
+    let messageBody = 'CRITICAL SOS EMERGENCY!';
+    if (locationUrl) {
+      messageBody += ` Location: ${locationUrl}`;
+    }
+    if (customLandmark.trim()) {
+      messageBody += ` (Landmark: ${customLandmark.trim()})`;
+    }
+    if (!locationUrl && !customLandmark.trim()) {
+      messageBody += ' Location unavailable. Please send help immediately!';
+    }
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const separator = isIOS ? '&' : '?';
+    const smsUri = `sms:${smsNumber}${separator}body=${encodeURIComponent(messageBody)}`;
+
+    setStatusMsg('Opening SMS app...');
+    setLoading(false);
+
+    window.location.href = smsUri;
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem', width: '100%' }}>
       
-      {/* Satellite / GPS Status Indicator */}
+      {/* Satellite / GPS Status & Manual Fetch Button */}
       <div style={{
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         gap: '0.5rem',
-        padding: '0.4rem 0.9rem',
-        borderRadius: '14px',
-        backgroundColor: cachedLoc ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-        border: `1px solid ${cachedLoc ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-        fontSize: '0.82rem',
-        color: cachedLoc ? '#34d399' : '#fbbf24'
+        width: '100%'
       }}>
-        {cachedLoc ? <CheckCircle size={15} /> : <Radio size={15} style={{ animation: 'pulse 1s infinite' }} />}
-        <span>
-          {cachedLoc
-            ? `Satellite GPS Ready: ${cachedLoc.lat.toFixed(4)}, ${cachedLoc.lng.toFixed(4)}`
-            : 'Acquiring Satellite GPS Lock...'}
-        </span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.4rem 0.9rem',
+          borderRadius: '14px',
+          backgroundColor: cachedLoc ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+          border: `1px solid ${cachedLoc ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+          fontSize: '0.82rem',
+          color: cachedLoc ? '#34d399' : '#fbbf24'
+        }}>
+          {cachedLoc ? <CheckCircle size={15} /> : <Radio size={15} style={{ animation: 'pulse 1s infinite' }} />}
+          <span>
+            {cachedLoc
+              ? `GPS Ready: ${cachedLoc.lat.toFixed(4)}, ${cachedLoc.lng.toFixed(4)}`
+              : 'GPS Coordinates Not Saved Yet'}
+          </span>
+        </div>
+
+        <button
+          onClick={fetchGPSLocation}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.35rem 0.8rem',
+            backgroundColor: 'rgba(2, 132, 199, 0.2)',
+            border: '1px solid rgba(2, 132, 199, 0.4)',
+            borderRadius: '12px',
+            color: '#38bdf8',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'background 0.2s'
+          }}
+        >
+          <Navigation size={12} /> Click to Allow / Fetch GPS Location
+        </button>
       </div>
 
+      {/* Manual Location / Landmark Input */}
+      <div style={{
+        width: '100%',
+        maxWidth: '320px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.35rem',
+        textAlign: 'left'
+      }}>
+        <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          <Edit3 size={12} /> Optional Landmark / Address:
+        </label>
+        <input
+          type="text"
+          placeholder="e.g. Near City Hospital, MG Road"
+          value={customLandmark}
+          onChange={handleLandmarkChange}
+          style={{
+            padding: '0.5rem 0.75rem',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            color: '#f8fafc',
+            fontSize: '0.82rem',
+            outline: 'none'
+          }}
+        />
+      </div>
+
+      {/* Big Red SOS Button */}
       <button
         onClick={triggerSOS}
         disabled={loading}
