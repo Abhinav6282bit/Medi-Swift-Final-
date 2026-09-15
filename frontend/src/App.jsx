@@ -55,8 +55,8 @@ function App() {
 
       navigator.geolocation.getCurrentPosition(
         saveLoc,
-        (err) => console.log('Global location prefetch:', err.message),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+        (err) => console.log('Global location prefetch error:', err.message),
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 }
       );
 
       const watchId = navigator.geolocation.watchPosition(

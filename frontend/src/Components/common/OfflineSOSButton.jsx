@@ -45,13 +45,32 @@ const OfflineSOSButton = () => {
     const smsNumber = '+916282348375';
 
     const sendSMS = (lat, lng, sourceLabel = '') => {
+      let finalLat = lat;
+      let finalLng = lng;
+
+      // Fallback check: if lat/lng are missing, check localStorage!
+      if (!finalLat || !finalLng) {
+        const saved = localStorage.getItem('mediswift_cached_location');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.lat && parsed.lng) {
+              finalLat = parsed.lat;
+              finalLng = parsed.lng;
+            }
+          } catch (e) {
+            console.error('Failed parsing saved location', e);
+          }
+        }
+      }
+
       let locationUrl = '';
-      if (lat && lng) {
-        locationUrl = `https://maps.google.com/?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
+      if (finalLat && finalLng) {
+        locationUrl = `https://maps.google.com/?q=${Number(finalLat).toFixed(6)},${Number(finalLng).toFixed(6)}`;
       }
 
       const messageBody = locationUrl
-        ? `CRITICAL SOS EMERGENCY! Location: ${locationUrl}${sourceLabel ? ` (${sourceLabel})` : ''}`
+        ? `CRITICAL SOS EMERGENCY! Location: ${locationUrl}`
         : `CRITICAL SOS EMERGENCY! Location unavailable. Please send help immediately!`;
 
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
