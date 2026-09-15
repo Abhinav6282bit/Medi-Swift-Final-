@@ -42,6 +42,35 @@ function App() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Global background location prefetcher
+    if ('geolocation' in navigator) {
+      const saveLoc = (pos) => {
+        const locData = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        localStorage.setItem('mediswift_cached_location', JSON.stringify(locData));
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        saveLoc,
+        (err) => console.log('Global location prefetch:', err.message),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      );
+
+      const watchId = navigator.geolocation.watchPosition(
+        saveLoc,
+        (err) => console.log('Global location watch:', err.message),
+        { enableHighAccuracy: false, maximumAge: 600000 }
+      );
+
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        navigator.geolocation.clearWatch(watchId);
+      };
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
